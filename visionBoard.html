@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Board</title>
+<style>
+  :root {
+    --toolbar-h: 46px;
+    --accent: #6c63ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    background: #eee;
+  }
+
+  /* ---------- Toolbar ---------- */
+  #toolbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--toolbar-h);
+    background: #1e1e2a;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 10px;
+    z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #toolbar .title {
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    margin-right: 8px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  #toolbar button {
+    background: #2c2c3d;
+    color: #fff;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #toolbar button:hover { background: var(--accent); }
+  #toolbar button:disabled { opacity: 0.35; cursor: default; }
+  #toolbar button:disabled:hover { background: #2c2c3d; }
+  #toolbar .btn-group {
+    display: flex;
+    flex-shrink: 0;
+  }
+  #toolbar .btn-group button:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  #toolbar .btn-group button:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid #1e1e2a;
+  }
+  #toolbar input[type="color"] {
+    width: 26px; height: 26px;
+    border: none; border-radius: 6px;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  #toolbar .color-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #fff;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #toolbar select, #toolbar input[type="number"] {
+    background: #2c2c3d;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 6px;
+    font-size: 11px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #toolbar input[type="number"] { width: 44px; cursor: text; }
+  #toolbar select:disabled, #toolbar input[type="number"]:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  #toolbar .spacer { flex: 1 0 12px; }
+  #toolbar .zoom-label {
+    color: #ccc;
+    font-size: 11px;
+    min-width: 34px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  #fileInput, #bgImageInput { display: none; }
+
+  /* ---------- Checklist drawer ---------- */
+  #checklistDrawer {
+    position: fixed;
+    left: 12px; bottom: 0;
+    width: 280px;
+    z-index: 9999;
+    background: rgba(30, 30, 42, 0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #checklistHandle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  #checklistHandle:hover { background: rgba(255, 255, 255, 0.1); }
+  #checklistHandle .arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+  #checklistDrawer.open #checklistHandle .arrow { transform: rotate(180deg); }
+  #checklistProgressText {
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 12px;
+  }
+  #checklistProgressBar {
+    height: 6px;
+    margin: 10px 14px 0;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  #checklistProgressFill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.25s ease;
+  }
+  #checklistBody {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  #checklistDrawer.open #checklistBody {
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+  #checklistDrawer .checklist-hint {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  #checklistItems {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+  }
+  #checklistItems li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #fff;
+  }
+  #checklistItems li:hover { background: rgba(255, 255, 255, 0.08); }
+  #checklistItems li.checked span { text-decoration: line-through; color: rgba(255, 255, 255, 0.4); }
+  #checklistItems input[type="checkbox"] { flex-shrink: 0; cursor: pointer; }
+  #checklistItems span { flex: 1; line-height: 1.3; }
+
+  /* ---------- Canvas viewport ---------- */
+  #viewport {
+    position: absolute;
+    top: var(--toolbar-h); left: 0; right: 0; bottom: 0;
+    overflow: auto;
+    background: #dcd7ca;
+    background-image:
+      radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  #viewport.custom-bg {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  #canvas {
+    position: relative;
+    width: 3000px;
+    height: 2000px;
+    transform-origin: 0 0;
+  }
+
+  /* ---------- Items ---------- */
+  .item {
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+    border-radius: 10px;
+  }
+  .item.dragging { cursor: grabbing; z-index: 9999 !important; opacity: 0.95; }
+  .item.selected { box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgba(0,0,0,0.18); }
+  .item .delete-btn {
+    position: absolute;
+    top: -10px; right: -10px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #ff5b5b;
+    color: #fff;
+    border: 2px solid #fff;
+    font-size: 13px;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+  }
+  .item:hover .delete-btn { display: flex; }
+  .item .resize-handle {
+    position: absolute;
+    width: 16px; height: 16px;
+    right: 2px; bottom: 2px;
+    cursor: nwse-resize;
+    opacity: 0;
+  }
+  .item:hover .resize-handle { opacity: 0.6; }
+  .item .resize-handle::after {
+    content: "";
+    position: absolute;
+    right: 2px; bottom: 2px;
+    width: 8px; height: 8px;
+    border-right: 2px solid #555;
+    border-bottom: 2px solid #555;
+  }
+
+  .content {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+  }
+
+  .sticky {
+    padding: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+    overflow: auto;
+    outline: none;
+    word-wrap: break-word;
+    user-select: text;
+  }
+  .sticky:empty::before {
+    content: "Type something...";
+    opacity: 0.5;
+  }
+
+  .text-item {
+    background: #ffffff;
+    border: 1px solid #d8d4c8;
+    padding: 10px 12px;
+    outline: none;
+    word-wrap: break-word;
+    overflow: auto;
+    color: #222;
+    user-select: text;
+  }
+  .text-item:empty::before {
+    content: "Type here...";
+    opacity: 0.4;
+  }
+
+  .image-item {
+    overflow: hidden;
+    background: #fff;
+  }
+  .image-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  .heading-item {
+    color: #222;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="title">✨ Vision Board</div>
+  <button id="addSticky">🗒️ Sticky Note</button>
+  <button id="addText">🔤 Text</button>
+  <button id="addHeading">🅰️ Heading</button>
+  <button id="addImageBtn">🖼️ Image</button>
+  <input type="file" id="fileInput" accept="image/*" multiple>
+  <input type="color" id="stickyColor" value="#fff59d" title="Sticky note color">
+  <select id="fontFamily" title="Font (select a text item first)" disabled>
+    <option value="inherit">Default font</option>
+    <option value="Georgia, serif">Georgia</option>
+    <option value="'Times New Roman', serif">Times New Roman</option>
+    <option value="'Courier New', monospace">Courier New</option>
+    <option value="'Comic Sans MS', cursive">Comic Sans</option>
+    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+    <option value="Verdana, sans-serif">Verdana</option>
+    <option value="'Brush Script MT', cursive">Brush Script</option>
+  </select>
+  <input type="number" id="fontSizeInput" min="8" max="120" title="Font size (select a text item first)" disabled>
+  <label class="color-label" for="borderColor">Border<input type="color" id="borderColor" value="#000000" title="Border color (select an item first)" disabled></label>
+  <input type="number" id="borderWidthInput" min="0" max="20" value="0" title="Border width in px, 0 = none (select an item first)" disabled>
+  <label class="color-label" for="bgColor">🎨 Background<input type="color" id="bgColor" value="#dcd7ca" title="Board background color"></label>
+  <span class="btn-group">
+    <button id="addBgImageBtn">🖼️ BG Image</button>
+    <input type="file" id="bgImageInput" accept="image/*">
+    <button id="removeBgImageBtn" title="Remove the background image" disabled>✕</button>
+  </span>
+  <button id="zoomOut">−</button>
+  <span class="zoom-label" id="zoomLabel">100%</span>
+  <button id="zoomIn">+</button>
+  <button id="resetZoom">Reset View</button>
+  <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↩ Undo</button>
+  <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↪ Redo</button>
+  <div class="spacer"></div>
+  <button id="clearBoard">🗑️ Clear Board</button>
+</div>
+
+<div id="checklistDrawer">
+  <button id="checklistHandle"><span class="arrow">▲</span> Checklist <span id="checklistProgressText"></span></button>
+  <div id="checklistBody">
+    <div id="checklistProgressBar"><div id="checklistProgressFill"></div></div>
+    <p class="checklist-hint">Check off ideas as you cover them on your board.</p>
+    <ul id="checklistItems"></ul>
+  </div>
+</div>
+
+<div id="viewport">
+  <div id="canvas"></div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('canvas');
+  const viewport = document.getElementById('viewport');
+  const STORAGE_KEY = 'visionBoardState_v1';
+  const CHECKLIST_STORAGE_KEY = 'visionBoardChecklist_v2';
+
+  const CHECKLIST_ITEMS = [
+    'Academic field of interest',
+    'Hobbies (2-3)',
+    'Future plans',
+    'College of interest',
+    'Future lifestyle',
+    'Social life',
+    'Extracurriculars',
+  ];
+
+  let items = [];
+  let nextZ = 1;
+  let scale = 1;
+  let selectedId = null;
+  let bgColor = '#dcd7ca';
+  let bgImage = null;
+
+  let history = [];
+  let historyIndex = -1;
+  const MAX_HISTORY = 100;
+
+  function uid() { return 'i' + Math.random().toString(36).slice(2, 10); }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, nextZ, bgColor, bgImage }));
+  }
+
+  function applyBackground() {
+    viewport.style.backgroundColor = bgColor;
+    document.getElementById('bgColor').value = bgColor;
+    if (bgImage) {
+      viewport.style.backgroundImage = `url("${bgImage}")`;
+      viewport.classList.add('custom-bg');
+    } else {
+      viewport.style.backgroundImage = '';
+      viewport.classList.remove('custom-bg');
+    }
+    document.getElementById('removeBgImageBtn').disabled = !bgImage;
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      items = data.items || [];
+      nextZ = data.nextZ || 1;
+      bgColor = data.bgColor || bgColor;
+      bgImage = data.bgImage || null;
+      items.forEach(renderItem);
+    } catch (e) {
+      console.error('Failed to load vision board state', e);
+    }
+  }
+
+  // ---------- Undo / redo ----------
+  function snapshot() {
+    return JSON.parse(JSON.stringify({ items, nextZ, bgColor, bgImage }));
+  }
+
+  function pushHistory() {
+    history = history.slice(0, historyIndex + 1);
+    history.push(snapshot());
+    if (history.length > MAX_HISTORY) history.shift();
+    historyIndex = history.length - 1;
+    updateUndoRedoButtons();
+  }
+
+  // Persists the current state and records it as an undoable step.
+  // Use this after a completed user action (not for in-progress drags/typing).
+  function commit() {
+    save();
+    pushHistory();
+  }
+
+  function renderAll() {
+    canvas.querySelectorAll('.item').forEach(el => el.remove());
+    deselectAll();
+    items.forEach(renderItem);
+  }
+
+  function applyState(state) {
+    items = JSON.parse(JSON.stringify(state.items));
+    nextZ = state.nextZ;
+    bgColor = state.bgColor || '#dcd7ca';
+    bgImage = state.bgImage || null;
+    renderAll();
+    applyBackground();
+    save();
+  }
+
+  function undo() {
+    if (historyIndex <= 0) return;
+    historyIndex--;
+    applyState(history[historyIndex]);
+    updateUndoRedoButtons();
+  }
+
+  function redo() {
+    if (historyIndex >= history.length - 1) return;
+    historyIndex++;
+    applyState(history[historyIndex]);
+    updateUndoRedoButtons();
+  }
+
+  function updateUndoRedoButtons() {
+    document.getElementById('undoBtn').disabled = historyIndex <= 0;
+    document.getElementById('redoBtn').disabled = historyIndex >= history.length - 1;
+  }
+
+  function bringToFront(el, item) {
+    item.z = nextZ++;
+    el.style.zIndex = item.z;
+    save();
+  }
+
+  function selectItem(id) {
+    selectedId = id;
+    canvas.querySelectorAll('.item.selected').forEach(e => e.classList.remove('selected'));
+    const el = canvas.querySelector(`[data-id="${id}"]`);
+    if (el) el.classList.add('selected');
+    updateFormatControls();
+  }
+
+  function deselectAll() {
+    selectedId = null;
+    canvas.querySelectorAll('.item.selected').forEach(e => e.classList.remove('selected'));
+    updateFormatControls();
+  }
+
+  function defaultFontSize(type) {
+    return type === 'heading' ? 32 : type === 'sticky' ? 15 : 16;
+  }
+
+  function updateFormatControls() {
+    const fontFamilySelect = document.getElementById('fontFamily');
+    const fontSizeInput = document.getElementById('fontSizeInput');
+    const borderColorInput = document.getElementById('borderColor');
+    const borderWidthInput = document.getElementById('borderWidthInput');
+    const item = items.find(i => i.id === selectedId);
+    const isText = item && ['sticky', 'text', 'heading'].includes(item.type);
+    fontFamilySelect.disabled = !isText;
+    fontSizeInput.disabled = !isText;
+    fontFamilySelect.value = isText ? (item.fontFamily || 'inherit') : 'inherit';
+    fontSizeInput.value = isText ? (item.fontSize || defaultFontSize(item.type)) : '';
+
+    borderColorInput.disabled = !item;
+    borderWidthInput.disabled = !item;
+    borderColorInput.value = item ? (item.borderColor || '#000000') : '#000000';
+    borderWidthInput.value = item ? (item.borderWidth || 0) : '';
+  }
+
+  function borderStyleFor(item) {
+    return item.borderWidth > 0 ? `${item.borderWidth}px solid ${item.borderColor || '#000000'}` : 'none';
+  }
+
+  function removeItemById(id) {
+    const el = canvas.querySelector(`[data-id="${id}"]`);
+    if (el) el.remove();
+    items = items.filter(i => i.id !== id);
+    if (selectedId === id) {
+      selectedId = null;
+      updateFormatControls();
+    }
+    commit();
+  }
+
+  function makeDeleteBtn(el, item) {
+    const btn = document.createElement('div');
+    btn.className = 'delete-btn';
+    btn.textContent = '✕';
+    btn.addEventListener('mousedown', e => e.stopPropagation());
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      removeItemById(item.id);
+    });
+    el.appendChild(btn);
+  }
+
+  function makeResizeHandle(el, item) {
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    el.appendChild(handle);
+
+    handle.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      bringToFront(el, item);
+      const startX = e.clientX, startY = e.clientY;
+      const startW = item.w, startH = item.h;
+
+      function onMove(ev) {
+        const dx = (ev.clientX - startX) / scale;
+        const dy = (ev.clientY - startY) / scale;
+        item.w = Math.max(60, startW + dx);
+        item.h = Math.max(40, startH + dy);
+        el.style.width = item.w + 'px';
+        el.style.height = item.h + 'px';
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        commit();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function makeDraggable(el, item) {
+    el.addEventListener('mousedown', e => {
+      if (e.target.closest('.delete-btn') || e.target.closest('.resize-handle')) return;
+      selectItem(item.id);
+      // allow text editing via click without initiating drag-follow on every keystroke
+      const isEditable = e.target.isContentEditable;
+      if (isEditable && document.activeElement === e.target) {
+        // already focused for editing; don't start a drag
+        return;
+      }
+      e.preventDefault();
+      bringToFront(el, item);
+      el.classList.add('dragging');
+      const startX = e.clientX, startY = e.clientY;
+      const startLeft = item.x, startTop = item.y;
+
+      function onMove(ev) {
+        const dx = (ev.clientX - startX) / scale;
+        const dy = (ev.clientY - startY) / scale;
+        item.x = startLeft + dx;
+        item.y = startTop + dy;
+        el.style.left = item.x + 'px';
+        el.style.top = item.y + 'px';
+      }
+      function onUp() {
+        el.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        commit();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function renderItem(item) {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.style.left = item.x + 'px';
+    el.style.top = item.y + 'px';
+    el.style.width = item.w + 'px';
+    el.style.height = item.h + 'px';
+    el.style.zIndex = item.z;
+    el.style.border = borderStyleFor(item);
+    el.dataset.id = item.id;
+
+    if (item.type === 'sticky' || item.type === 'text' || item.type === 'heading') {
+      // The editable text lives in its own inner element, kept separate from
+      // the delete/resize control divs — mixing them into one contentEditable
+      // region confuses the browser's editing engine and forces each line
+      // onto its own block, which visually looks like text stacking downward.
+      const contentEl = document.createElement('div');
+      contentEl.className = 'content';
+      contentEl.contentEditable = 'true';
+      contentEl.spellcheck = false;
+      contentEl.innerHTML = item.content || '';
+      contentEl.addEventListener('input', () => { item.content = contentEl.innerHTML; save(); });
+      contentEl.addEventListener('blur', () => commit());
+
+      if (item.type === 'sticky') {
+        contentEl.classList.add('sticky');
+        contentEl.style.background = item.color || '#fff59d';
+      } else if (item.type === 'text') {
+        contentEl.classList.add('text-item');
+      } else if (item.type === 'heading') {
+        contentEl.classList.add('text-item', 'heading-item');
+        contentEl.style.fontWeight = '700';
+      }
+      contentEl.style.fontSize = (item.fontSize || defaultFontSize(item.type)) + 'px';
+      if (item.fontFamily && item.fontFamily !== 'inherit') {
+        contentEl.style.fontFamily = item.fontFamily;
+      }
+
+      el.appendChild(contentEl);
+      el.addEventListener('dblclick', e => {
+        e.stopPropagation();
+        contentEl.focus();
+        placeCaretAtEnd(contentEl);
+      });
+    } else if (item.type === 'image') {
+      el.classList.add('image-item');
+      const img = document.createElement('img');
+      img.src = item.content;
+      img.draggable = false;
+      el.appendChild(img);
+    }
+
+    makeDraggable(el, item);
+    makeResizeHandle(el, item);
+    makeDeleteBtn(el, item);
+
+    canvas.appendChild(el);
+    return el;
+  }
+
+  function addItem(partial) {
+    const centerX = (viewport.scrollLeft + viewport.clientWidth / 2) / scale - (partial.w || 200) / 2;
+    const centerY = (viewport.scrollTop + viewport.clientHeight / 2) / scale - (partial.h || 150) / 2;
+    const item = Object.assign({
+      id: uid(),
+      x: centerX,
+      y: centerY,
+      w: 200,
+      h: 150,
+      z: nextZ++,
+    }, partial);
+    items.push(item);
+    const el = renderItem(item);
+    commit();
+    // focus new text-like items for immediate typing
+    if (['sticky', 'text', 'heading'].includes(item.type)) {
+      const contentEl = el.querySelector('.content');
+      if (contentEl) {
+        contentEl.focus();
+        placeCaretAtEnd(contentEl);
+      }
+    }
+  }
+
+  function placeCaretAtEnd(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  // ---------- Checklist panel ----------
+  let checklistChecked = {};
+
+  function loadChecklist() {
+    try {
+      const raw = localStorage.getItem(CHECKLIST_STORAGE_KEY);
+      if (raw) checklistChecked = JSON.parse(raw);
+    } catch (e) {
+      console.error('Failed to load checklist state', e);
+    }
+  }
+
+  function saveChecklist() {
+    localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(checklistChecked));
+  }
+
+  function updateChecklistProgress() {
+    const total = CHECKLIST_ITEMS.length;
+    const done = CHECKLIST_ITEMS.reduce((count, _, i) => count + (checklistChecked[i] ? 1 : 0), 0);
+    document.getElementById('checklistProgressText').textContent = `${done}/${total} completed`;
+    document.getElementById('checklistProgressFill').style.width = `${(done / total) * 100}%`;
+  }
+
+  function renderChecklist() {
+    const ul = document.getElementById('checklistItems');
+    ul.innerHTML = '';
+    CHECKLIST_ITEMS.forEach((text, i) => {
+      const li = document.createElement('li');
+      if (checklistChecked[i]) li.classList.add('checked');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = !!checklistChecked[i];
+      checkbox.addEventListener('change', () => {
+        checklistChecked[i] = checkbox.checked;
+        li.classList.toggle('checked', checkbox.checked);
+        saveChecklist();
+        updateChecklistProgress();
+      });
+
+      const span = document.createElement('span');
+      span.textContent = text;
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+      ul.appendChild(li);
+    });
+    updateChecklistProgress();
+  }
+
+  document.getElementById('checklistHandle').addEventListener('click', () => {
+    document.getElementById('checklistDrawer').classList.toggle('open');
+  });
+
+  // ---------- Toolbar actions ----------
+  document.getElementById('addSticky').addEventListener('click', () => {
+    addItem({ type: 'sticky', w: 220, h: 180, color: document.getElementById('stickyColor').value, content: '' });
+  });
+
+  document.getElementById('addText').addEventListener('click', () => {
+    addItem({ type: 'text', w: 220, h: 60, fontSize: 16, content: '' });
+  });
+
+  document.getElementById('addHeading').addEventListener('click', () => {
+    addItem({ type: 'heading', w: 320, h: 70, fontSize: 32, content: '' });
+  });
+
+  document.getElementById('bgColor').addEventListener('input', e => {
+    bgColor = e.target.value;
+    applyBackground();
+    save();
+  });
+
+  document.getElementById('bgColor').addEventListener('change', () => commit());
+
+  document.getElementById('fontFamily').addEventListener('change', e => {
+    const item = items.find(i => i.id === selectedId);
+    if (!item) return;
+    item.fontFamily = e.target.value;
+    const contentEl = canvas.querySelector(`[data-id="${item.id}"] .content`);
+    if (contentEl) contentEl.style.fontFamily = item.fontFamily === 'inherit' ? '' : item.fontFamily;
+    commit();
+  });
+
+  document.getElementById('fontSizeInput').addEventListener('input', e => {
+    const item = items.find(i => i.id === selectedId);
+    if (!item) return;
+    const val = parseInt(e.target.value, 10);
+    if (!val) return;
+    item.fontSize = val;
+    const contentEl = canvas.querySelector(`[data-id="${item.id}"] .content`);
+    if (contentEl) contentEl.style.fontSize = val + 'px';
+    save();
+  });
+
+  document.getElementById('fontSizeInput').addEventListener('change', () => {
+    if (selectedId) commit();
+  });
+
+  document.getElementById('borderColor').addEventListener('input', e => {
+    const item = items.find(i => i.id === selectedId);
+    if (!item) return;
+    item.borderColor = e.target.value;
+    const el = canvas.querySelector(`[data-id="${item.id}"]`);
+    if (el) el.style.border = borderStyleFor(item);
+    save();
+  });
+
+  document.getElementById('borderColor').addEventListener('change', () => {
+    if (selectedId) commit();
+  });
+
+  document.getElementById('borderWidthInput').addEventListener('input', e => {
+    const item = items.find(i => i.id === selectedId);
+    if (!item) return;
+    item.borderWidth = Math.max(0, parseInt(e.target.value, 10) || 0);
+    const el = canvas.querySelector(`[data-id="${item.id}"]`);
+    if (el) el.style.border = borderStyleFor(item);
+    save();
+  });
+
+  document.getElementById('borderWidthInput').addEventListener('change', () => {
+    if (selectedId) commit();
+  });
+
+  document.getElementById('addBgImageBtn').addEventListener('click', () => {
+    document.getElementById('bgImageInput').click();
+  });
+
+  document.getElementById('bgImageInput').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      bgImage = reader.result;
+      applyBackground();
+      commit();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('removeBgImageBtn').addEventListener('click', () => {
+    bgImage = null;
+    applyBackground();
+    commit();
+  });
+
+  document.getElementById('addImageBtn').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+  });
+
+  document.getElementById('fileInput').addEventListener('change', e => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file, idx) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        addItem({ type: 'image', w: 260, h: 220, content: reader.result });
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  });
+
+  document.getElementById('clearBoard').addEventListener('click', () => {
+    if (!items.length) return;
+    if (!confirm('Clear the entire board? This cannot be undone.')) return;
+    items = [];
+    nextZ = 1;
+    Array.from(canvas.querySelectorAll('.item')).forEach(el => el.remove());
+    commit();
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
+
+  // ---------- Selection & keyboard delete ----------
+  viewport.addEventListener('mousedown', e => {
+    if (!e.target.closest('.item')) deselectAll();
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      redo();
+      return;
+    }
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    if (!selectedId) return;
+    const active = document.activeElement;
+    const editingSelected = active && active.isContentEditable &&
+      active.closest('.item') && active.closest('.item').dataset.id === selectedId;
+    if (editingSelected) return; // let normal text editing handle the keystroke
+    e.preventDefault();
+    removeItemById(selectedId);
+  });
+
+  // ---------- Zoom ----------
+  const zoomLabel = document.getElementById('zoomLabel');
+  function applyZoom() {
+    canvas.style.transform = `scale(${scale})`;
+    zoomLabel.textContent = Math.round(scale * 100) + '%';
+  }
+  document.getElementById('zoomIn').addEventListener('click', () => {
+    scale = Math.min(2, scale + 0.1);
+    applyZoom();
+  });
+  document.getElementById('zoomOut').addEventListener('click', () => {
+    scale = Math.max(0.3, scale - 0.1);
+    applyZoom();
+  });
+  document.getElementById('resetZoom').addEventListener('click', () => {
+    scale = 1;
+    applyZoom();
+    viewport.scrollTo({ left: 0, top: 0 });
+  });
+
+  // ---------- Init ----------
+  load();
+  applyBackground();
+  loadChecklist();
+  renderChecklist();
+  history = [snapshot()];
+  historyIndex = 0;
+  updateUndoRedoButtons();
+  applyZoom();
+  // Center the initial scroll position a bit
+  viewport.scrollLeft = (canvas.offsetWidth - viewport.clientWidth) / 4;
+  viewport.scrollTop = (canvas.offsetHeight - viewport.clientHeight) / 4;
+})();
+</script>
+
+</body>
+</html>
