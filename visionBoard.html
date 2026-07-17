@@ -58,6 +58,7 @@
   #toolbar button:hover { background: var(--accent); }
   #toolbar button:disabled { opacity: 0.35; cursor: default; }
   #toolbar button:disabled:hover { background: #2c2c3d; }
+  #toolbar button.active { background: var(--accent); }
   #toolbar .btn-group {
     display: flex;
     flex-shrink: 0;
@@ -70,6 +71,25 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     border-left: 1px solid #1e1e2a;
+  }
+  #toolbar .btn-group.bg-group {
+    align-items: center;
+    background: #2c2c3d;
+    border-radius: 6px;
+    padding: 0 2px 0 8px;
+    gap: 6px;
+  }
+  #toolbar .btn-group.bg-group .color-label {
+    padding: 0;
+  }
+  #toolbar .btn-group.bg-group button {
+    border-radius: 0;
+    background: transparent;
+  }
+  #toolbar .btn-group.bg-group button:hover { background: var(--accent); }
+  #toolbar .btn-group.bg-group button:last-child {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
   }
   #toolbar input[type="color"] {
     width: 26px; height: 26px;
@@ -103,6 +123,65 @@
   #toolbar select:disabled, #toolbar input[type="number"]:disabled {
     opacity: 0.35;
     cursor: default;
+  }
+
+  /* ---------- Labeled field groups (Font / Border) ---------- */
+  #toolbar .field-group {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    background: #2c2c3d;
+    border-radius: 6px;
+    transition: opacity 0.15s;
+  }
+  #toolbar .field-group.disabled { opacity: 0.4; }
+  #toolbar .field-group .field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+  }
+  #toolbar .field-group .field:not(:last-child) {
+    border-right: 1px solid #1e1e2a;
+  }
+  #toolbar .field-group .field-label {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  #toolbar .field-group select,
+  #toolbar .field-group input[type="number"] {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+  #toolbar .field-group input[type="color"] {
+    width: 20px;
+    height: 20px;
+  }
+  /* ---------- Toolbar sections ---------- */
+  #toolbar .toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  #toolbar .section-label {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #toolbar .toolbar-divider {
+    width: 1px;
+    align-self: stretch;
+    margin: 10px 4px;
+    background: rgba(255, 255, 255, 0.12);
+    flex-shrink: 0;
   }
   #toolbar .spacer { flex: 1 0 12px; }
   #toolbar .zoom-label {
@@ -229,6 +308,17 @@
     transform-origin: 0 0;
   }
 
+  #drawCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3000px;
+    height: 2000px;
+    z-index: 99999;
+    pointer-events: none;
+    touch-action: none;
+  }
+  #drawCanvas.active { pointer-events: auto; cursor: crosshair; }
+
   /* ---------- Items ---------- */
   .item {
     position: absolute;
@@ -320,12 +410,6 @@
     pointer-events: none;
   }
 
-  .heading-item {
-    color: #222;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
 
 </style>
 </head>
@@ -333,37 +417,92 @@
 
 <div id="toolbar">
   <div class="title">✨ Vision Board</div>
-  <button id="addSticky">🗒️ Sticky Note</button>
-  <button id="addText">🔤 Text</button>
-  <button id="addHeading">🅰️ Heading</button>
-  <button id="addImageBtn">🖼️ Image</button>
-  <input type="file" id="fileInput" accept="image/*" multiple>
-  <input type="color" id="stickyColor" value="#fff59d" title="Sticky note color">
-  <select id="fontFamily" title="Font (select a text item first)" disabled>
-    <option value="inherit">Default font</option>
-    <option value="Georgia, serif">Georgia</option>
-    <option value="'Times New Roman', serif">Times New Roman</option>
-    <option value="'Courier New', monospace">Courier New</option>
-    <option value="'Comic Sans MS', cursive">Comic Sans</option>
-    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-    <option value="Verdana, sans-serif">Verdana</option>
-    <option value="'Brush Script MT', cursive">Brush Script</option>
-  </select>
-  <input type="number" id="fontSizeInput" min="8" max="120" title="Font size (select a text item first)" disabled>
-  <label class="color-label" for="borderColor">Border<input type="color" id="borderColor" value="#000000" title="Border color (select an item first)" disabled></label>
-  <input type="number" id="borderWidthInput" min="0" max="20" value="0" title="Border width in px, 0 = none (select an item first)" disabled>
-  <label class="color-label" for="bgColor">🎨 Background<input type="color" id="bgColor" value="#dcd7ca" title="Board background color"></label>
-  <span class="btn-group">
-    <button id="addBgImageBtn">🖼️ BG Image</button>
-    <input type="file" id="bgImageInput" accept="image/*">
-    <button id="removeBgImageBtn" title="Remove the background image" disabled>✕</button>
-  </span>
-  <button id="zoomOut">−</button>
-  <span class="zoom-label" id="zoomLabel">100%</span>
-  <button id="zoomIn">+</button>
-  <button id="resetZoom">Reset View</button>
-  <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↩ Undo</button>
-  <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↪ Redo</button>
+
+  <div class="toolbar-section">
+    <span class="section-label">Add</span>
+    <button id="addSticky">🗒️ Sticky Note</button>
+    <input type="color" id="stickyColor" title="Color for the next sticky note you add" value="#fff59d">
+    <button id="addText">🔤 Text</button>
+    <button id="addImageBtn">🖼️ Image</button>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+  </div>
+
+  <div class="toolbar-divider"></div>
+
+  <div class="toolbar-section">
+    <span class="section-label">Draw</span>
+    <button id="toggleDraw" title="Toggle draw mode">✏️ Draw</button>
+    <input type="color" id="penColor" value="#ff3b30" title="Pen color">
+    <input type="number" id="penSizeInput" min="1" max="60" value="4" title="Pen size">
+    <button id="toggleEraser" title="Eraser (erases drawing strokes)">🧽 Eraser</button>
+    <button id="clearDrawing" title="Clear all drawing">🧹 Clear Drawing</button>
+  </div>
+
+  <div class="toolbar-divider"></div>
+
+  <div class="toolbar-section">
+    <span class="section-label">Style</span>
+    <span class="field-group" id="textFieldGroup" title="Text style — select a sticky or text item first">
+      <span class="field">
+        <span class="field-label">Font</span>
+        <select id="fontFamily" title="Font family" disabled>
+          <option value="inherit">Default</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', serif">Times New Roman</option>
+          <option value="'Courier New', monospace">Courier New</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="'Brush Script MT', cursive">Brush Script</option>
+        </select>
+      </span>
+      <span class="field">
+        <span class="field-label">Size</span>
+        <input type="number" id="fontSizeInput" min="8" max="120" title="Font size in px" disabled>
+      </span>
+    </span>
+    <span class="field-group" id="borderFieldGroup" title="Item border — select an item first">
+      <span class="field">
+        <span class="field-label">Border</span>
+        <input type="color" id="borderColor" value="#000000" title="Border color" disabled>
+      </span>
+      <span class="field">
+        <span class="field-label">Width</span>
+        <input type="number" id="borderWidthInput" min="0" max="20" value="0" title="Border width in px, 0 = none" disabled>
+      </span>
+    </span>
+  </div>
+
+  <div class="toolbar-divider"></div>
+
+  <div class="toolbar-section">
+    <span class="section-label">Background</span>
+    <span class="btn-group bg-group" title="Board background">
+      <label class="color-label" for="bgColor">🎨<input type="color" id="bgColor" value="#dcd7ca" title="Background color (used when no image is set)"></label>
+      <button id="addBgImageBtn" title="Set a background image">🖼️ Image</button>
+      <input type="file" id="bgImageInput" accept="image/*">
+      <button id="removeBgImageBtn" title="Remove background image, revert to color" disabled>✕</button>
+    </span>
+  </div>
+
+  <div class="toolbar-divider"></div>
+
+  <div class="toolbar-section">
+    <span class="section-label">View</span>
+    <button id="zoomOut">−</button>
+    <span class="zoom-label" id="zoomLabel">100%</span>
+    <button id="zoomIn">+</button>
+    <button id="resetZoom">Reset View</button>
+  </div>
+
+  <div class="toolbar-divider"></div>
+
+  <div class="toolbar-section">
+    <span class="section-label">History</span>
+    <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↩ Undo</button>
+    <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↪ Redo</button>
+  </div>
+
   <div class="spacer"></div>
   <button id="clearBoard">🗑️ Clear Board</button>
 </div>
@@ -378,7 +517,9 @@
 </div>
 
 <div id="viewport">
-  <div id="canvas"></div>
+  <div id="canvas">
+    <canvas id="drawCanvas"></canvas>
+  </div>
 </div>
 
 <script>
@@ -404,6 +545,7 @@
   let selectedId = null;
   let bgColor = '#dcd7ca';
   let bgImage = null;
+  let strokes = [];
 
   let history = [];
   let historyIndex = -1;
@@ -412,7 +554,7 @@
   function uid() { return 'i' + Math.random().toString(36).slice(2, 10); }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, nextZ, bgColor, bgImage }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, nextZ, bgColor, bgImage, strokes }));
   }
 
   function applyBackground() {
@@ -437,7 +579,9 @@
       nextZ = data.nextZ || 1;
       bgColor = data.bgColor || bgColor;
       bgImage = data.bgImage || null;
+      strokes = data.strokes || [];
       items.forEach(renderItem);
+      redrawStrokes();
     } catch (e) {
       console.error('Failed to load vision board state', e);
     }
@@ -445,7 +589,7 @@
 
   // ---------- Undo / redo ----------
   function snapshot() {
-    return JSON.parse(JSON.stringify({ items, nextZ, bgColor, bgImage }));
+    return JSON.parse(JSON.stringify({ items, nextZ, bgColor, bgImage, strokes }));
   }
 
   function pushHistory() {
@@ -474,8 +618,10 @@
     nextZ = state.nextZ;
     bgColor = state.bgColor || '#dcd7ca';
     bgImage = state.bgImage || null;
+    strokes = JSON.parse(JSON.stringify(state.strokes || []));
     renderAll();
     applyBackground();
+    redrawStrokes();
     save();
   }
 
@@ -519,7 +665,7 @@
   }
 
   function defaultFontSize(type) {
-    return type === 'heading' ? 32 : type === 'sticky' ? 15 : 16;
+    return type === 'sticky' ? 15 : 16;
   }
 
   function updateFormatControls() {
@@ -528,16 +674,18 @@
     const borderColorInput = document.getElementById('borderColor');
     const borderWidthInput = document.getElementById('borderWidthInput');
     const item = items.find(i => i.id === selectedId);
-    const isText = item && ['sticky', 'text', 'heading'].includes(item.type);
+    const isText = item && ['sticky', 'text'].includes(item.type);
     fontFamilySelect.disabled = !isText;
     fontSizeInput.disabled = !isText;
     fontFamilySelect.value = isText ? (item.fontFamily || 'inherit') : 'inherit';
     fontSizeInput.value = isText ? (item.fontSize || defaultFontSize(item.type)) : '';
+    document.getElementById('textFieldGroup').classList.toggle('disabled', !isText);
 
     borderColorInput.disabled = !item;
     borderWidthInput.disabled = !item;
     borderColorInput.value = item ? (item.borderColor || '#000000') : '#000000';
     borderWidthInput.value = item ? (item.borderWidth || 0) : '';
+    document.getElementById('borderFieldGroup').classList.toggle('disabled', !item);
   }
 
   function borderStyleFor(item) {
@@ -643,7 +791,7 @@
     el.style.border = borderStyleFor(item);
     el.dataset.id = item.id;
 
-    if (item.type === 'sticky' || item.type === 'text' || item.type === 'heading') {
+    if (item.type === 'sticky' || item.type === 'text') {
       // The editable text lives in its own inner element, kept separate from
       // the delete/resize control divs — mixing them into one contentEditable
       // region confuses the browser's editing engine and forces each line
@@ -661,9 +809,6 @@
         contentEl.style.background = item.color || '#fff59d';
       } else if (item.type === 'text') {
         contentEl.classList.add('text-item');
-      } else if (item.type === 'heading') {
-        contentEl.classList.add('text-item', 'heading-item');
-        contentEl.style.fontWeight = '700';
       }
       contentEl.style.fontSize = (item.fontSize || defaultFontSize(item.type)) + 'px';
       if (item.fontFamily && item.fontFamily !== 'inherit') {
@@ -707,7 +852,7 @@
     const el = renderItem(item);
     commit();
     // focus new text-like items for immediate typing
-    if (['sticky', 'text', 'heading'].includes(item.type)) {
+    if (['sticky', 'text'].includes(item.type)) {
       const contentEl = el.querySelector('.content');
       if (contentEl) {
         contentEl.focus();
@@ -724,6 +869,138 @@
     sel.removeAllRanges();
     sel.addRange(range);
   }
+
+  // ---------- Drawing ----------
+  const drawCanvas = document.getElementById('drawCanvas');
+  const dctx = drawCanvas.getContext('2d');
+  const DRAW_DPR = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+  drawCanvas.width = 3000 * DRAW_DPR;
+  drawCanvas.height = 2000 * DRAW_DPR;
+  dctx.scale(DRAW_DPR, DRAW_DPR);
+
+  let drawMode = false;
+  let eraseMode = false;
+  let currentStroke = null;
+  let penColor = document.getElementById('penColor').value;
+  let penSize = parseInt(document.getElementById('penSizeInput').value, 10) || 4;
+
+  function getCanvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    };
+  }
+
+  function strokeCtxSetup(ctx, stroke) {
+    ctx.globalCompositeOperation = stroke.erase ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = stroke.color;
+    ctx.fillStyle = stroke.color;
+    ctx.lineWidth = stroke.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+
+  function drawStroke(stroke) {
+    if (!stroke.points.length) return;
+    dctx.save();
+    strokeCtxSetup(dctx, stroke);
+    if (stroke.points.length === 1) {
+      const [x, y] = stroke.points[0];
+      dctx.beginPath();
+      dctx.arc(x, y, stroke.width / 2, 0, Math.PI * 2);
+      dctx.fill();
+    } else {
+      dctx.beginPath();
+      dctx.moveTo(stroke.points[0][0], stroke.points[0][1]);
+      for (let i = 1; i < stroke.points.length; i++) {
+        dctx.lineTo(stroke.points[i][0], stroke.points[i][1]);
+      }
+      dctx.stroke();
+    }
+    dctx.restore();
+  }
+
+  function redrawStrokes() {
+    dctx.clearRect(0, 0, 3000, 2000);
+    strokes.forEach(drawStroke);
+  }
+
+  function setDrawMode(on) {
+    if (!on) endStroke(); // finalize any in-progress stroke instead of dropping it
+    drawMode = on;
+    document.getElementById('toggleDraw').classList.toggle('active', drawMode);
+    drawCanvas.classList.toggle('active', drawMode);
+    if (!drawMode) deselectAll();
+  }
+
+  function setEraseMode(on) {
+    eraseMode = on;
+    document.getElementById('toggleEraser').classList.toggle('active', eraseMode);
+    if (eraseMode && !drawMode) setDrawMode(true); // Eraser implies draw mode is on
+  }
+
+  drawCanvas.addEventListener('pointerdown', e => {
+    if (!drawMode) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // ignore right/middle click
+    e.preventDefault();
+    drawCanvas.setPointerCapture(e.pointerId);
+    const pt = getCanvasPoint(e);
+    currentStroke = {
+      color: penColor,
+      width: eraseMode ? Math.max(penSize * 3, 20) : penSize,
+      erase: eraseMode,
+      points: [[pt.x, pt.y]],
+    };
+  });
+
+  drawCanvas.addEventListener('contextmenu', e => {
+    if (drawMode) e.preventDefault(); // don't let a right-click context menu interrupt a stroke
+  });
+
+  drawCanvas.addEventListener('pointermove', e => {
+    if (!drawMode || !currentStroke) return;
+    const pt = getCanvasPoint(e);
+    const pts = currentStroke.points;
+    const last = pts[pts.length - 1];
+    dctx.save();
+    strokeCtxSetup(dctx, currentStroke);
+    dctx.beginPath();
+    dctx.moveTo(last[0], last[1]);
+    dctx.lineTo(pt.x, pt.y);
+    dctx.stroke();
+    dctx.restore();
+    pts.push([pt.x, pt.y]);
+  });
+
+  function endStroke(e) {
+    if (!currentStroke) return;
+    if (e && e.pointerId != null && drawCanvas.hasPointerCapture(e.pointerId)) {
+      drawCanvas.releasePointerCapture(e.pointerId);
+    }
+    if (currentStroke.points.length === 1) drawStroke(currentStroke);
+    strokes.push(currentStroke);
+    currentStroke = null;
+    commit();
+  }
+
+  drawCanvas.addEventListener('pointerup', endStroke);
+  drawCanvas.addEventListener('pointercancel', endStroke);
+  drawCanvas.addEventListener('lostpointercapture', endStroke);
+
+  document.getElementById('toggleDraw').addEventListener('click', () => setDrawMode(!drawMode));
+  document.getElementById('toggleEraser').addEventListener('click', () => setEraseMode(!eraseMode));
+  document.getElementById('penColor').addEventListener('input', e => { penColor = e.target.value; });
+  document.getElementById('penSizeInput').addEventListener('input', e => {
+    penSize = Math.max(1, parseInt(e.target.value, 10) || 4);
+  });
+  document.getElementById('clearDrawing').addEventListener('click', () => {
+    if (!strokes.length) return;
+    if (!confirm('Clear all drawing? This cannot be undone.')) return;
+    strokes = [];
+    redrawStrokes();
+    commit();
+  });
 
   // ---------- Checklist panel ----------
   let checklistChecked = {};
@@ -786,10 +1063,6 @@
 
   document.getElementById('addText').addEventListener('click', () => {
     addItem({ type: 'text', w: 220, h: 60, fontSize: 16, content: '' });
-  });
-
-  document.getElementById('addHeading').addEventListener('click', () => {
-    addItem({ type: 'heading', w: 320, h: 70, fontSize: 32, content: '' });
   });
 
   document.getElementById('bgColor').addEventListener('input', e => {
@@ -890,11 +1163,13 @@
   });
 
   document.getElementById('clearBoard').addEventListener('click', () => {
-    if (!items.length) return;
+    if (!items.length && !strokes.length) return;
     if (!confirm('Clear the entire board? This cannot be undone.')) return;
     items = [];
     nextZ = 1;
+    strokes = [];
     Array.from(canvas.querySelectorAll('.item')).forEach(el => el.remove());
+    redrawStrokes();
     commit();
   });
 
@@ -907,6 +1182,10 @@
   });
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && drawMode) {
+      setDrawMode(false);
+      return;
+    }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       if (e.shiftKey) redo(); else undo();
@@ -950,6 +1229,7 @@
   // ---------- Init ----------
   load();
   applyBackground();
+  updateFormatControls();
   loadChecklist();
   renderChecklist();
   history = [snapshot()];
@@ -957,7 +1237,6 @@
   updateUndoRedoButtons();
   applyZoom();
   // Center the initial scroll position a bit
-  // Add stuff
   viewport.scrollLeft = (canvas.offsetWidth - viewport.clientWidth) / 4;
   viewport.scrollTop = (canvas.offsetHeight - viewport.clientHeight) / 4;
 })();
