@@ -1142,6 +1142,7 @@
       chipMode.classList.add('active', 'draw-active');
       chipModeText.textContent = 'Draw Mode';
     } else {
+      chipMode.classList.add('active');
       chipModeText.textContent = 'Select Mode';
     }
 
@@ -1506,7 +1507,7 @@
   }
 
   drawCanvas.addEventListener('pointerenter', e => {
-    if (!drawMode) return;
+    if (!drawMode && !eraseMode) return;
     styleDrawCursor();
     drawCursorEl.style.left = e.clientX + 'px';
     drawCursorEl.style.top = e.clientY + 'px';
@@ -1514,32 +1515,47 @@
   });
   drawCanvas.addEventListener('pointerleave', () => showDrawCursor(false));
   drawCanvas.addEventListener('pointermove', e => {
-    if (!drawMode) return;
+    if (!drawMode && !eraseMode) return;
     drawCursorEl.style.left = e.clientX + 'px';
     drawCursorEl.style.top = e.clientY + 'px';
   });
 
   function setDrawMode(on) {
-    if (!on) { endStroke(); showDrawCursor(false); }
     drawMode = on;
+    if (on) {
+      // Turning on draw — disable erase
+      eraseMode = false;
+      document.getElementById('toggleEraser').classList.remove('active');
+    } else {
+      endStroke();
+      if (!eraseMode) showDrawCursor(false);
+    }
     document.getElementById('toggleDraw').classList.toggle('active', drawMode);
-    drawCanvas.classList.toggle('active', drawMode);
-    // Always deselect when toggling draw mode — keeps style bar hidden under the draw canvas
+    drawCanvas.classList.toggle('active', drawMode || eraseMode);
     deselectAll();
-    if (!drawMode) { eraseMode = false; document.getElementById('toggleEraser').classList.remove('active'); }
+    styleDrawCursor();
     updateActivityBar();
   }
 
   function setEraseMode(on) {
     eraseMode = on;
+    if (on) {
+      // Turning on erase — disable draw
+      drawMode = false;
+      document.getElementById('toggleDraw').classList.remove('active');
+    } else {
+      endStroke();
+      if (!drawMode) showDrawCursor(false);
+    }
     document.getElementById('toggleEraser').classList.toggle('active', eraseMode);
-    if (eraseMode && !drawMode) setDrawMode(true);
+    drawCanvas.classList.toggle('active', drawMode || eraseMode);
+    deselectAll();
     styleDrawCursor();
     updateActivityBar();
   }
 
   drawCanvas.addEventListener('pointerdown', e => {
-    if (!drawMode) return;
+    if (!drawMode && !eraseMode) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     drawCanvas.setPointerCapture(e.pointerId);
@@ -1552,10 +1568,11 @@
     };
   });
 
-  drawCanvas.addEventListener('contextmenu', e => { if (drawMode) e.preventDefault(); });
+  drawCanvas.addEventListener('contextmenu', e => { if (drawMode || eraseMode) e.preventDefault(); });
 
+  let minimapRafId = null;
   drawCanvas.addEventListener('pointermove', e => {
-    if (!drawMode || !currentStroke) return;
+    if ((!drawMode && !eraseMode) || !currentStroke) return;
     const pt = getCanvasPoint(e);
     const pts = currentStroke.points;
     const last = pts[pts.length - 1];
@@ -1567,6 +1584,8 @@
     dctx.stroke();
     dctx.restore();
     pts.push([pt.x, pt.y]);
+    // Throttle minimap updates to one per animation frame
+    if (!minimapRafId) minimapRafId = requestAnimationFrame(() => { updateMinimap(); minimapRafId = null; });
   });
 
   function endStroke(e) {
@@ -1821,7 +1840,7 @@
   viewport.addEventListener('mousedown', e => { if (!e.target.closest('.item')) deselectAll(); });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && drawMode) { setDrawMode(false); return; }
+    if (e.key === 'Escape' && (drawMode || eraseMode)) { setDrawMode(false); setEraseMode(false); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       if (e.shiftKey) redo(); else undo();
@@ -1865,16 +1884,57 @@
   const mctx = minimapCanvas.getContext('2d');
   const MM_W = 200, MM_H = 133, MM_S = MM_W / 3000;
 
+  // Offscreen canvas for stroke layer — destination-out erases ink here,
+  // not the minimap background, so erased areas go transparent (not black)
+  const strokeOffscreen = document.createElement('canvas');
+  strokeOffscreen.width = MM_W;
+  strokeOffscreen.height = MM_H;
+  const sctx = strokeOffscreen.getContext('2d');
+
   function updateMinimap() {
     mctx.clearRect(0, 0, MM_W, MM_H);
     mctx.fillStyle = bgImage ? '#888' : bgColor;
     mctx.fillRect(0, 0, MM_W, MM_H);
+
+    // Items
     for (const item of items) {
       if (item.type === 'sticky') mctx.fillStyle = item.color || '#fff59d';
-      else if (item.type === 'text') mctx.fillStyle = '#fff';
+      else if (item.type === 'text') mctx.fillStyle = item.bgColor || '#fff';
       else mctx.fillStyle = '#aaa';
       mctx.fillRect(item.x * MM_S, item.y * MM_S, item.w * MM_S, item.h * MM_S);
     }
+
+    // Strokes — rendered on offscreen canvas so destination-out punches through
+    // ink only, not the minimap background (which would show as black holes)
+    const allStrokes = currentStroke ? [...strokes, currentStroke] : strokes;
+    sctx.clearRect(0, 0, MM_W, MM_H);
+    for (const stroke of allStrokes) {
+      if (!stroke.points.length) continue;
+      sctx.save();
+      sctx.globalCompositeOperation = stroke.erase ? 'destination-out' : 'source-over';
+      sctx.strokeStyle = stroke.color;
+      sctx.fillStyle = stroke.color;
+      sctx.lineWidth = Math.max(0.5, stroke.width * MM_S);
+      sctx.lineCap = 'round';
+      sctx.lineJoin = 'round';
+      if (stroke.points.length === 1) {
+        const [x, y] = stroke.points[0];
+        sctx.beginPath();
+        sctx.arc(x * MM_S, y * MM_S, Math.max(0.5, stroke.width * MM_S / 2), 0, Math.PI * 2);
+        sctx.fill();
+      } else {
+        sctx.beginPath();
+        sctx.moveTo(stroke.points[0][0] * MM_S, stroke.points[0][1] * MM_S);
+        for (let i = 1; i < stroke.points.length; i++) {
+          sctx.lineTo(stroke.points[i][0] * MM_S, stroke.points[i][1] * MM_S);
+        }
+        sctx.stroke();
+      }
+      sctx.restore();
+    }
+    // Composite the stroke layer — transparent (erased) areas reveal background/items
+    mctx.drawImage(strokeOffscreen, 0, 0);
+
     // Viewport indicator
     const vx = (viewport.scrollLeft / scale) * MM_S;
     const vy = (viewport.scrollTop / scale) * MM_S;
