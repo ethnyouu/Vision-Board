@@ -12,6 +12,7 @@
     --toolbar-h: 80px;
     --activitybar-h: 30px;
     --stylebar-h: 44px;
+    --drawbar-h: 44px;
     --accent: #7b5cd0;
     --accent-light: #e0d8f4;
     --teal: #1ba599;
@@ -277,7 +278,102 @@
   body.stylebar-open #viewport {
     top: calc(var(--toolbar-h) + var(--activitybar-h) + var(--stylebar-h));
   }
+  body.drawbar-open #viewport {
+    top: calc(var(--toolbar-h) + var(--activitybar-h) + var(--drawbar-h));
+  }
   #viewport { transition: top 0.18s ease; }
+
+  /* ---------- Draw bar ---------- */
+  #drawBar {
+    position: fixed;
+    top: calc(var(--toolbar-h) + var(--activitybar-h));
+    left: 0; right: 0;
+    height: var(--drawbar-h);
+    background: #1c2262;
+    border-bottom: 1px solid rgba(123,92,208,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    z-index: 9998;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.18s ease, opacity 0.15s ease;
+    pointer-events: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #drawBar.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #drawBar .draw-label {
+    color: rgba(224,216,244,0.35);
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  #drawBar .draw-divider {
+    width: 1px; height: 20px;
+    background: rgba(123,92,208,0.3);
+    flex-shrink: 0;
+  }
+  #drawBar .field-group {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    border: 1px solid rgba(224,216,244,0.12);
+    border-radius: 7px;
+    overflow: hidden;
+    transition: opacity 0.15s;
+  }
+  #drawBar .field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 11px;
+  }
+  #drawBar .field:not(:last-child) {
+    border-right: 1px solid rgba(224,216,244,0.2);
+  }
+  #drawBar .field-label {
+    color: var(--teal-light);
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+  }
+  #drawBar input[type="color"] { width: 22px; height: 22px; }
+  #drawBar .size-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #drawBar #sizePreview {
+    border-radius: 50%;
+    background: #ff3b30;
+    flex-shrink: 0;
+    transition: width 0.1s, height 0.1s, background 0.1s;
+  }
+  #drawBar button.draw-tool-btn {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(224,216,244,0.18);
+    background: var(--navy-light);
+    color: var(--accent-light);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #drawBar button.draw-tool-btn:hover { background: var(--navy-hover); color: #fff; }
+  #drawBar button.draw-tool-btn.active { background: var(--accent); color: #fff; }
 
   /* ---------- Sticky split button ---------- */
   .sticky-btn-wrap {
@@ -642,8 +738,8 @@
     pointer-events: none;
     touch-action: none;
   }
-  #drawCanvas.active { pointer-events: auto; cursor: crosshair; }
-  #drawCanvas.active.hide-cursor { cursor: none; }
+  #drawCanvas.active { pointer-events: auto; cursor: none; }
+  #drawCanvas.active.fill-mode { cursor: crosshair; }
 
   /* Text cursor inside sticky/text content */
   .item .content { cursor: text; }
@@ -846,13 +942,7 @@
   <div class="toolbar-section">
     <span class="section-label">Draw</span>
     <button id="toggleDraw" title="Toggle draw mode">✏️ Draw</button>
-    <input type="color" id="penColor" value="#ff3b30" title="Pen color">
-    <div class="size-control" title="Brush size">
-      <input type="range" id="penSizeInput" min="1" max="60" value="4">
-      <span id="sizePreview"></span>
-    </div>
     <button id="toggleEraser" title="Eraser">🧽 Eraser</button>
-    <button id="clearDrawing" title="Clear all drawing">🧹 Clear</button>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -946,6 +1036,29 @@
       <input type="number" id="borderWidthInput" min="0" max="20" value="0" disabled>
     </span>
   </span>
+</div>
+
+<!-- ── Draw Bar ── -->
+<div id="drawBar">
+  <span class="draw-label">Draw</span>
+  <span class="field-group">
+    <span class="field">
+      <span class="field-label">Color</span>
+      <input type="color" id="penColor" value="#ff3b30" title="Pen color">
+    </span>
+  </span>
+  <div class="draw-divider"></div>
+  <span class="field-group">
+    <span class="field size-control" title="Brush size">
+      <span class="field-label">Size</span>
+      <input type="range" id="penSizeInput" min="1" max="60" value="4">
+      <span id="sizePreview"></span>
+    </span>
+  </span>
+  <div class="draw-divider"></div>
+  <button id="fillModeBtn" class="draw-tool-btn" title="Fill — click an area to flood fill with the current color">🪣 Fill</button>
+  <div class="draw-divider"></div>
+  <button id="clearDrawing" class="draw-tool-btn" title="Clear all drawing">🧹 Clear</button>
 </div>
 
 <!-- ── Checklist Drawer ── -->
@@ -1127,6 +1240,7 @@
   // ---------- Activity bar ----------
   let drawMode = false;
   let eraseMode = false;
+  let fillMode = false;
 
   function updateActivityBar() {
     const chipMode = document.getElementById('chipMode');
@@ -1138,6 +1252,9 @@
     if (eraseMode) {
       chipMode.classList.add('active', 'erase-active');
       chipModeText.textContent = 'Erase Mode';
+    } else if (fillMode) {
+      chipMode.classList.add('active', 'draw-active');
+      chipModeText.textContent = 'Fill Mode';
     } else if (drawMode) {
       chipMode.classList.add('active', 'draw-active');
       chipModeText.textContent = 'Draw Mode';
@@ -1461,6 +1578,36 @@
   }
 
   function drawStroke(stroke) {
+    if (stroke.fill) {
+      // Replay flood fill inline during redraw
+      const w = drawCanvas.width, h = drawCanvas.height;
+      const px = Math.round(stroke.x * DRAW_DPR);
+      const py = Math.round(stroke.y * DRAW_DPR);
+      if (px < 0 || py < 0 || px >= w || py >= h) return;
+      const imageData = dctx.getImageData(0, 0, w, h);
+      const data = imageData.data;
+      const si = (py * w + px) * 4;
+      const tr = data[si], tg = data[si + 1], tb = data[si + 2], ta = data[si + 3];
+      const [fr, fg, fb, fa] = hexToRgba(stroke.color);
+      if (tr === fr && tg === fg && tb === fb && ta === fa) return;
+      const stack = [py * w + px];
+      const visited = new Uint8Array(w * h);
+      while (stack.length) {
+        const idx = stack.pop();
+        if (visited[idx]) continue;
+        visited[idx] = 1;
+        const di = idx * 4;
+        if (data[di] !== tr || data[di + 1] !== tg || data[di + 2] !== tb || data[di + 3] !== ta) continue;
+        data[di] = fr; data[di + 1] = fg; data[di + 2] = fb; data[di + 3] = fa;
+        const x = idx % w, y = (idx / w) | 0;
+        if (x > 0) stack.push(idx - 1);
+        if (x < w - 1) stack.push(idx + 1);
+        if (y > 0) stack.push(idx - w);
+        if (y < h - 1) stack.push(idx + w);
+      }
+      dctx.putImageData(imageData, 0, 0);
+      return;
+    }
     if (!stroke.points.length) return;
     dctx.save();
     strokeCtxSetup(dctx, stroke);
@@ -1503,7 +1650,6 @@
 
   function showDrawCursor(visible) {
     drawCursorEl.style.display = visible ? 'block' : 'none';
-    drawCanvas.classList.toggle('hide-cursor', visible);
   }
 
   drawCanvas.addEventListener('pointerenter', e => {
@@ -1515,51 +1661,116 @@
   });
   drawCanvas.addEventListener('pointerleave', () => showDrawCursor(false));
   drawCanvas.addEventListener('pointermove', e => {
-    if (!drawMode && !eraseMode) return;
+    if ((!drawMode && !eraseMode) || fillMode) return;
     drawCursorEl.style.left = e.clientX + 'px';
     drawCursorEl.style.top = e.clientY + 'px';
   });
 
+  const drawBar = document.getElementById('drawBar');
+  function updateDrawBar() {
+    const active = drawMode || eraseMode || fillMode;
+    drawBar.classList.toggle('active', active);
+    document.body.classList.toggle('drawbar-open', active);
+  }
+
   function setDrawMode(on) {
     drawMode = on;
     if (on) {
-      // Turning on draw — disable erase
+      // Turning on draw — disable erase and fill
       eraseMode = false;
+      fillMode = false;
       document.getElementById('toggleEraser').classList.remove('active');
+      document.getElementById('fillModeBtn').classList.remove('active');
     } else {
       endStroke();
       if (!eraseMode) showDrawCursor(false);
     }
     document.getElementById('toggleDraw').classList.toggle('active', drawMode);
     drawCanvas.classList.toggle('active', drawMode || eraseMode);
+    drawCanvas.classList.remove('fill-mode');
     deselectAll();
     styleDrawCursor();
+    if (drawMode && drawCanvas.matches(':hover')) showDrawCursor(true);
     updateActivityBar();
+    updateDrawBar();
   }
 
   function setEraseMode(on) {
     eraseMode = on;
     if (on) {
-      // Turning on erase — disable draw
+      // Turning on erase — disable draw and fill
       drawMode = false;
+      fillMode = false;
       document.getElementById('toggleDraw').classList.remove('active');
+      document.getElementById('fillModeBtn').classList.remove('active');
     } else {
       endStroke();
       if (!drawMode) showDrawCursor(false);
     }
     document.getElementById('toggleEraser').classList.toggle('active', eraseMode);
     drawCanvas.classList.toggle('active', drawMode || eraseMode);
+    drawCanvas.classList.remove('fill-mode');
     deselectAll();
     styleDrawCursor();
+    if (eraseMode && drawCanvas.matches(':hover')) showDrawCursor(true);
     updateActivityBar();
+    updateDrawBar();
+  }
+
+  // ---------- Flood fill ----------
+  function hexToRgba(hex) {
+    const n = parseInt(hex.replace('#', ''), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
+  }
+
+  function floodFill(canvasX, canvasY, fillColor) {
+    const w = drawCanvas.width, h = drawCanvas.height;
+    const px = Math.round(canvasX * DRAW_DPR);
+    const py = Math.round(canvasY * DRAW_DPR);
+    if (px < 0 || py < 0 || px >= w || py >= h) return;
+
+    const imageData = dctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    const si = (py * w + px) * 4;
+    const tr = data[si], tg = data[si + 1], tb = data[si + 2], ta = data[si + 3];
+    const [fr, fg, fb, fa] = hexToRgba(fillColor);
+
+    // If target already matches fill color, nothing to do
+    if (tr === fr && tg === fg && tb === fb && ta === fa) return;
+
+    const stack = [py * w + px];
+    const visited = new Uint8Array(w * h);
+
+    while (stack.length) {
+      const idx = stack.pop();
+      if (visited[idx]) continue;
+      visited[idx] = 1;
+      const di = idx * 4;
+      if (data[di] !== tr || data[di + 1] !== tg || data[di + 2] !== tb || data[di + 3] !== ta) continue;
+      data[di] = fr; data[di + 1] = fg; data[di + 2] = fb; data[di + 3] = fa;
+      const x = idx % w, y = (idx / w) | 0;
+      if (x > 0) stack.push(idx - 1);
+      if (x < w - 1) stack.push(idx + 1);
+      if (y > 0) stack.push(idx - w);
+      if (y < h - 1) stack.push(idx + w);
+    }
+
+    dctx.putImageData(imageData, 0, 0);
+    strokes.push({ fill: true, x: canvasX, y: canvasY, color: fillColor });
+    commit();
+    updateMinimap();
   }
 
   drawCanvas.addEventListener('pointerdown', e => {
-    if (!drawMode && !eraseMode) return;
+    if (!drawMode && !eraseMode && !fillMode) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
-    drawCanvas.setPointerCapture(e.pointerId);
     const pt = getCanvasPoint(e);
+    if (fillMode) {
+      floodFill(pt.x, pt.y, penColor);
+      return;
+    }
+    drawCanvas.setPointerCapture(e.pointerId);
     currentStroke = {
       color: penColor,
       width: eraseMode ? Math.max(penSize * 3, 20) : penSize,
@@ -1568,7 +1779,7 @@
     };
   });
 
-  drawCanvas.addEventListener('contextmenu', e => { if (drawMode || eraseMode) e.preventDefault(); });
+  drawCanvas.addEventListener('contextmenu', e => { if (drawMode || eraseMode || fillMode) e.preventDefault(); });
 
   let minimapRafId = null;
   drawCanvas.addEventListener('pointermove', e => {
@@ -1605,6 +1816,27 @@
   document.getElementById('toggleEraser').addEventListener('click', () => { setEraseMode(!eraseMode); updateSizePreview(); });
   document.getElementById('penColor').addEventListener('input', e => { penColor = e.target.value; updateSizePreview(); styleDrawCursor(); });
   document.getElementById('penSizeInput').addEventListener('input', e => { penSize = Math.max(1, parseInt(e.target.value, 10) || 4); updateSizePreview(); styleDrawCursor(); });
+
+  document.getElementById('fillModeBtn').addEventListener('click', () => {
+    fillMode = !fillMode;
+    if (fillMode) {
+      // Fill mode is its own drawing sub-mode — keep draw bar visible
+      drawMode = false;
+      eraseMode = false;
+      document.getElementById('toggleDraw').classList.remove('active');
+      document.getElementById('toggleEraser').classList.remove('active');
+      showDrawCursor(false);
+      drawCanvas.classList.add('active');
+      drawCanvas.classList.add('fill-mode');
+      deselectAll();
+      updateActivityBar();
+    } else {
+      drawCanvas.classList.remove('active');
+      drawCanvas.classList.remove('fill-mode');
+    }
+    document.getElementById('fillModeBtn').classList.toggle('active', fillMode);
+    updateDrawBar();
+  });
 
   document.getElementById('clearDrawing').addEventListener('click', () => {
     if (!strokes.length) return;
