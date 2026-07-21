@@ -11,6 +11,7 @@
   :root {
     --toolbar-h: 80px;
     --activitybar-h: 30px;
+    --stylebar-h: 44px;
     --accent: #7b5cd0;
     --accent-light: #e0d8f4;
     --teal: #1ba599;
@@ -193,37 +194,37 @@
     pointer-events: none;
   }
 
-  /* ---------- Labeled field groups ---------- */
-  #toolbar .field-group {
+  /* ---------- Labeled field groups (shared by toolbar + stylebar) ---------- */
+  :is(#toolbar, #styleBar) .field-group {
     display: flex;
     align-items: stretch;
     flex-shrink: 0;
     background: rgba(224,216,244,0.1);
     border: 1px solid rgba(224,216,244,0.3);
     border-radius: 9px;
-    height: 40px;
+    height: 36px;
     transition: opacity 0.15s;
     overflow: hidden;
   }
-  #toolbar .field-group.disabled { opacity: 0.35; }
-  #toolbar .field-group .field {
+  :is(#toolbar, #styleBar) .field-group.disabled { opacity: 0.35; pointer-events: none; }
+  :is(#toolbar, #styleBar) .field-group .field {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 0 11px;
   }
-  #toolbar .field-group .field:not(:last-child) {
+  :is(#toolbar, #styleBar) .field-group .field:not(:last-child) {
     border-right: 1px solid rgba(224,216,244,0.2);
   }
-  #toolbar .field-group .field-label {
+  :is(#toolbar, #styleBar) .field-group .field-label {
     color: var(--teal-light);
     font-family: var(--font-display);
     font-size: 12px;
     letter-spacing: 0.8px;
     white-space: nowrap;
   }
-  #toolbar .field-group select,
-  #toolbar .field-group input[type="number"] {
+  :is(#toolbar, #styleBar) .field-group select,
+  :is(#toolbar, #styleBar) .field-group input[type="number"] {
     background: transparent;
     border: none;
     padding: 0;
@@ -232,7 +233,94 @@
     color: #fff;
     font-family: var(--font-body);
   }
-  #toolbar .field-group input[type="color"] { width: 22px; height: 22px; }
+  :is(#toolbar, #styleBar) .field-group input[type="color"] { width: 22px; height: 22px; }
+
+  /* ---------- Style bar ---------- */
+  #styleBar {
+    position: fixed;
+    top: calc(var(--toolbar-h) + var(--activitybar-h));
+    left: 0; right: 0;
+    height: var(--stylebar-h);
+    background: #1c2262;
+    border-bottom: 1px solid rgba(123,92,208,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    z-index: 9998;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.18s ease, opacity 0.15s ease;
+    pointer-events: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #styleBar.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #styleBar .style-label {
+    color: rgba(224,216,244,0.35);
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  #styleBar .style-divider {
+    width: 1px; height: 20px;
+    background: rgba(123,92,208,0.3);
+    flex-shrink: 0;
+  }
+  body.stylebar-open #viewport {
+    top: calc(var(--toolbar-h) + var(--activitybar-h) + var(--stylebar-h));
+  }
+  #viewport { transition: top 0.18s ease; }
+
+  /* ---------- Sticky split button ---------- */
+  .sticky-btn-wrap {
+    display: flex;
+    flex-shrink: 0;
+  }
+  .sticky-btn-wrap #addSticky {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .sticky-color-swatch-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: 30px;
+    background: var(--navy-light);
+    border: 1px solid rgba(224,216,244,0.18);
+    border-left: none;
+    border-top-right-radius: 9px;
+    border-bottom-right-radius: 9px;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s;
+  }
+  .sticky-color-swatch-btn:hover { background: var(--navy-hover); }
+  #stickyColorSwatch {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: #fff59d;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+  .sticky-color-swatch-btn input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%; height: 100%;
+  }
 
   /* ---------- Toolbar sections ---------- */
   #toolbar .toolbar-section {
@@ -555,6 +643,22 @@
     touch-action: none;
   }
   #drawCanvas.active { pointer-events: auto; cursor: crosshair; }
+  #drawCanvas.active.hide-cursor { cursor: none; }
+
+  /* Text cursor inside sticky/text content */
+  .item .content { cursor: text; }
+
+  /* Custom draw cursor circle */
+  #drawCursor {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 99998;
+    display: none;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
+    transition: width 0.08s, height 0.08s;
+  }
 
   /* ---------- Items ---------- */
   .item {
@@ -659,7 +763,10 @@
     z-index: 9998;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    transition: height 0.2s ease;
   }
+  #minimap.minimized { height: 26px; }
+  #minimap.minimized #minimapCanvas { display: none; }
   #minimapCanvas { display: block; width: 200px; height: 133px; }
   #minimapLabel {
     position: absolute;
@@ -670,6 +777,21 @@
     color: rgba(224,216,244,0.5);
     pointer-events: none;
   }
+  #minimapToggle {
+    position: absolute;
+    top: 3px; right: 5px;
+    background: none;
+    border: none;
+    color: rgba(224,216,244,0.45);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+    z-index: 1;
+    font-family: var(--font-body);
+  }
+  #minimapToggle:hover { color: #fff; background: rgba(255,255,255,0.1); }
 </style>
 </head>
 <body>
@@ -707,11 +829,13 @@
 
   <div class="toolbar-section">
     <span class="section-label">Add</span>
-    <button id="addSticky">🗒️ Sticky</button>
-    <label class="color-label" title="Sticky note color">
-      <input type="color" id="stickyColor" value="#fff59d">
-      Color
-    </label>
+    <div class="sticky-btn-wrap">
+      <button id="addSticky">🗒️ Sticky</button>
+      <label class="sticky-color-swatch-btn" title="Sticky color">
+        <span id="stickyColorSwatch"></span>
+        <input type="color" id="stickyColor" value="#fff59d">
+      </label>
+    </div>
     <button id="addText">🔤 Text</button>
     <button id="addImageBtn">🖼️ Image</button>
     <input type="file" id="fileInput" accept="image/*" multiple>
@@ -729,41 +853,6 @@
     </div>
     <button id="toggleEraser" title="Eraser">🧽 Eraser</button>
     <button id="clearDrawing" title="Clear all drawing">🧹 Clear</button>
-  </div>
-
-  <div class="toolbar-divider"></div>
-
-  <div class="toolbar-section">
-    <span class="section-label">Style</span>
-    <span class="field-group" id="textFieldGroup" title="Text style — select a sticky or text item first">
-      <span class="field">
-        <span class="field-label">Font</span>
-        <select id="fontFamily" disabled>
-          <option value="inherit">Default</option>
-          <option value="Georgia, serif">Georgia</option>
-          <option value="'Times New Roman', serif">Times New Roman</option>
-          <option value="'Courier New', monospace">Courier New</option>
-          <option value="'Comic Sans MS', cursive">Comic Sans</option>
-          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-          <option value="Verdana, sans-serif">Verdana</option>
-          <option value="'Brush Script MT', cursive">Brush Script</option>
-        </select>
-      </span>
-      <span class="field">
-        <span class="field-label">Size</span>
-        <input type="number" id="fontSizeInput" min="8" max="120" disabled>
-      </span>
-    </span>
-    <span class="field-group" id="borderFieldGroup" title="Border — select an item first">
-      <span class="field">
-        <span class="field-label">Border</span>
-        <input type="color" id="borderColor" value="#000000" disabled>
-      </span>
-      <span class="field">
-        <span class="field-label">Width</span>
-        <input type="number" id="borderWidthInput" min="0" max="20" value="0" disabled>
-      </span>
-    </span>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -813,6 +902,52 @@
   <span id="activityHint">Drag to move · Scroll to pan · Cmd+Z to undo · Right-click item to duplicate or delete</span>
 </div>
 
+<!-- ── Style Bar ── -->
+<div id="styleBar">
+  <span class="style-label">Style</span>
+  <span class="field-group" id="textFieldGroup" title="Text style — select a sticky or text item first">
+    <span class="field">
+      <span class="field-label">Font</span>
+      <select id="fontFamily" disabled>
+        <option value="inherit">Default</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Times New Roman', serif">Times New Roman</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Comic Sans MS', cursive">Comic Sans</option>
+        <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="'Brush Script MT', cursive">Brush Script</option>
+      </select>
+    </span>
+    <span class="field">
+      <span class="field-label">Size</span>
+      <input type="number" id="fontSizeInput" min="8" max="120" disabled>
+    </span>
+    <span class="field">
+      <span class="field-label">Color</span>
+      <input type="color" id="itemTextColor" value="#000000" disabled>
+    </span>
+  </span>
+  <div class="style-divider"></div>
+  <span class="field-group" id="fillFieldGroup" title="Fill color — select a sticky or text box">
+    <span class="field">
+      <span class="field-label">Fill</span>
+      <input type="color" id="itemFillColor" value="#fff59d" disabled>
+    </span>
+  </span>
+  <div class="style-divider"></div>
+  <span class="field-group" id="borderFieldGroup" title="Border — select an item first">
+    <span class="field">
+      <span class="field-label">Border</span>
+      <input type="color" id="borderColor" value="#000000" disabled>
+    </span>
+    <span class="field">
+      <span class="field-label">Width</span>
+      <input type="number" id="borderWidthInput" min="0" max="20" value="0" disabled>
+    </span>
+  </span>
+</div>
+
 <!-- ── Checklist Drawer ── -->
 <div id="checklistDrawer">
   <button id="checklistHandle"><span class="arrow">▲</span> Checklist <span id="checklistProgressText"></span></button>
@@ -828,8 +963,11 @@
 
 <div id="minimap">
   <span id="minimapLabel">MAP</span>
+  <button id="minimapToggle" title="Minimize minimap">−</button>
   <canvas id="minimapCanvas" width="200" height="133"></canvas>
 </div>
+
+<div id="drawCursor"></div>
 
 <div id="viewport">
   <div id="canvas">
@@ -963,6 +1101,7 @@
     renderAll();
     applyBackground();
     redrawStrokes();
+    updateMinimap();
     save();
   }
 
@@ -1044,13 +1183,21 @@
 
   function defaultFontSize(type) { return type === 'sticky' ? 15 : 16; }
 
+  const styleBar = document.getElementById('styleBar');
+
   function updateFormatControls() {
     const fontFamilySelect = document.getElementById('fontFamily');
     const fontSizeInput = document.getElementById('fontSizeInput');
     const borderColorInput = document.getElementById('borderColor');
     const borderWidthInput = document.getElementById('borderWidthInput');
+    const fillColorInput = document.getElementById('itemFillColor');
     const item = items.find(i => i.id === selectedId);
     const isText = item && ['sticky', 'text'].includes(item.type);
+
+    // Show/hide style bar
+    styleBar.classList.toggle('active', !!item);
+    document.body.classList.toggle('stylebar-open', !!item);
+
     fontFamilySelect.disabled = !isText;
     fontSizeInput.disabled = !isText;
     fontFamilySelect.value = isText ? (item.fontFamily || 'inherit') : 'inherit';
@@ -1061,6 +1208,16 @@
     borderColorInput.value = item ? (item.borderColor || '#000000') : '#000000';
     borderWidthInput.value = item ? (item.borderWidth || 0) : '';
     document.getElementById('borderFieldGroup').classList.toggle('disabled', !item);
+    fillColorInput.disabled = !isText;
+    if (isText) {
+      fillColorInput.value = item.type === 'sticky'
+        ? (item.color || '#fff59d')
+        : (item.bgColor || '#ffffff');
+    }
+    document.getElementById('fillFieldGroup').classList.toggle('disabled', !isText);
+    const textColorInput = document.getElementById('itemTextColor');
+    textColorInput.disabled = !isText;
+    if (isText) textColorInput.value = item.textColor || '#000000';
   }
 
   function borderStyleFor(item) {
@@ -1219,9 +1376,11 @@
         contentEl.style.background = item.color || '#fff59d';
       } else {
         contentEl.classList.add('text-item');
+        if (item.bgColor) contentEl.style.background = item.bgColor;
       }
       contentEl.style.fontSize = (item.fontSize || defaultFontSize(item.type)) + 'px';
       if (item.fontFamily && item.fontFamily !== 'inherit') contentEl.style.fontFamily = item.fontFamily;
+      if (item.textColor) contentEl.style.color = item.textColor;
       el.appendChild(contentEl);
       el.addEventListener('dblclick', e => { e.stopPropagation(); contentEl.focus(); placeCaretAtEnd(contentEl); });
     } else if (item.type === 'image') {
@@ -1323,12 +1482,51 @@
     strokes.forEach(drawStroke);
   }
 
+  // ---------- Draw cursor ----------
+  const drawCursorEl = document.getElementById('drawCursor');
+
+  function styleDrawCursor() {
+    const effectiveSize = eraseMode ? Math.max(penSize * 3, 20) : penSize;
+    const px = Math.max(4, effectiveSize * scale);
+    drawCursorEl.style.width = px + 'px';
+    drawCursorEl.style.height = px + 'px';
+    if (eraseMode) {
+      drawCursorEl.style.background = 'rgba(239,68,68,0.12)';
+      drawCursorEl.style.border = '1.5px solid rgba(239,68,68,0.85)';
+    } else {
+      const hex = penColor;
+      drawCursorEl.style.background = hex + '33';
+      drawCursorEl.style.border = `1.5px solid ${hex}`;
+    }
+  }
+
+  function showDrawCursor(visible) {
+    drawCursorEl.style.display = visible ? 'block' : 'none';
+    drawCanvas.classList.toggle('hide-cursor', visible);
+  }
+
+  drawCanvas.addEventListener('pointerenter', e => {
+    if (!drawMode) return;
+    styleDrawCursor();
+    drawCursorEl.style.left = e.clientX + 'px';
+    drawCursorEl.style.top = e.clientY + 'px';
+    showDrawCursor(true);
+  });
+  drawCanvas.addEventListener('pointerleave', () => showDrawCursor(false));
+  drawCanvas.addEventListener('pointermove', e => {
+    if (!drawMode) return;
+    drawCursorEl.style.left = e.clientX + 'px';
+    drawCursorEl.style.top = e.clientY + 'px';
+  });
+
   function setDrawMode(on) {
-    if (!on) endStroke();
+    if (!on) { endStroke(); showDrawCursor(false); }
     drawMode = on;
     document.getElementById('toggleDraw').classList.toggle('active', drawMode);
     drawCanvas.classList.toggle('active', drawMode);
-    if (!drawMode) { eraseMode = false; document.getElementById('toggleEraser').classList.remove('active'); deselectAll(); }
+    // Always deselect when toggling draw mode — keeps style bar hidden under the draw canvas
+    deselectAll();
+    if (!drawMode) { eraseMode = false; document.getElementById('toggleEraser').classList.remove('active'); }
     updateActivityBar();
   }
 
@@ -1336,6 +1534,7 @@
     eraseMode = on;
     document.getElementById('toggleEraser').classList.toggle('active', eraseMode);
     if (eraseMode && !drawMode) setDrawMode(true);
+    styleDrawCursor();
     updateActivityBar();
   }
 
@@ -1385,8 +1584,8 @@
 
   document.getElementById('toggleDraw').addEventListener('click', () => { setDrawMode(!drawMode); updateSizePreview(); });
   document.getElementById('toggleEraser').addEventListener('click', () => { setEraseMode(!eraseMode); updateSizePreview(); });
-  document.getElementById('penColor').addEventListener('input', e => { penColor = e.target.value; updateSizePreview(); });
-  document.getElementById('penSizeInput').addEventListener('input', e => { penSize = Math.max(1, parseInt(e.target.value, 10) || 4); updateSizePreview(); });
+  document.getElementById('penColor').addEventListener('input', e => { penColor = e.target.value; updateSizePreview(); styleDrawCursor(); });
+  document.getElementById('penSizeInput').addEventListener('input', e => { penSize = Math.max(1, parseInt(e.target.value, 10) || 4); updateSizePreview(); styleDrawCursor(); });
 
   document.getElementById('clearDrawing').addEventListener('click', () => {
     if (!strokes.length) return;
@@ -1515,9 +1714,17 @@
     if (e.key === 'Enter') document.getElementById('checklistAddBtn').click();
   });
 
+  // ---------- Sticky color swatch sync ----------
+  const stickyColorInput = document.getElementById('stickyColor');
+  const stickyColorSwatch = document.getElementById('stickyColorSwatch');
+  stickyColorSwatch.style.background = stickyColorInput.value;
+  stickyColorInput.addEventListener('input', e => {
+    stickyColorSwatch.style.background = e.target.value;
+  });
+
   // ---------- Toolbar actions ----------
   document.getElementById('addSticky').addEventListener('click', () => {
-    addItem({ type: 'sticky', w: 220, h: 180, color: document.getElementById('stickyColor').value, content: '' });
+    addItem({ type: 'sticky', w: 220, h: 180, color: stickyColorInput.value, content: '' });
   });
 
   document.getElementById('addText').addEventListener('click', () => {
@@ -1602,6 +1809,7 @@
       strokes = [];
       canvas.querySelectorAll('.item').forEach(el => el.remove());
       redrawStrokes();
+      deselectAll();
       commit();
     });
   });
@@ -1681,12 +1889,51 @@
 
   viewport.addEventListener('scroll', updateMinimap);
 
+  // Minimap minimize toggle
+  document.getElementById('minimapToggle').addEventListener('click', () => {
+    const mm = document.getElementById('minimap');
+    const btn = document.getElementById('minimapToggle');
+    const minimized = mm.classList.toggle('minimized');
+    btn.textContent = minimized ? '+' : '−';
+    btn.title = minimized ? 'Expand minimap' : 'Minimize minimap';
+  });
+
+  // ---------- Fill color (sticky + text) ----------
+  document.getElementById('itemFillColor').addEventListener('input', e => {
+    const item = items.find(i => i.id === selectedId);
+    if (!item) return;
+    if (item.type === 'sticky') {
+      item.color = e.target.value;
+      const contentEl = canvas.querySelector(`[data-id="${item.id}"] .content`);
+      if (contentEl) contentEl.style.background = item.color;
+    } else if (item.type === 'text') {
+      item.bgColor = e.target.value;
+      const contentEl = canvas.querySelector(`[data-id="${item.id}"] .content`);
+      if (contentEl) contentEl.style.background = item.bgColor;
+    }
+    save();
+    updateMinimap();
+  });
+  document.getElementById('itemFillColor').addEventListener('change', () => commit());
+
+  // ---------- Text color ----------
+  document.getElementById('itemTextColor').addEventListener('input', e => {
+    const item = items.find(i => i.id === selectedId);
+    if (!item) return;
+    item.textColor = e.target.value;
+    const contentEl = canvas.querySelector(`[data-id="${item.id}"] .content`);
+    if (contentEl) contentEl.style.color = item.textColor;
+    save();
+  });
+  document.getElementById('itemTextColor').addEventListener('change', () => { if (selectedId) commit(); });
+
   // ---------- Zoom ----------
   const zoomLabel = document.getElementById('zoomLabel');
   function applyZoom() {
     canvas.style.transform = `scale(${scale})`;
     zoomLabel.textContent = Math.round(scale * 100) + '%';
     updateMinimap();
+    styleDrawCursor();
   }
   document.getElementById('zoomIn').addEventListener('click', () => { scale = Math.min(2, scale + 0.1); applyZoom(); });
   document.getElementById('zoomOut').addEventListener('click', () => { scale = Math.max(0.3, scale - 0.1); applyZoom(); });
