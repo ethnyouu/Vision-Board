@@ -878,7 +878,7 @@
   }
   .text-item:empty::before { content: "Type here..."; opacity: 0.4; }
   .image-item { overflow: visible; background: transparent; }
-  .image-item img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  .image-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
   .image-item.has-crop { overflow: visible; background: transparent; }
 
   /* ---------- Crop modal ---------- */
@@ -1649,21 +1649,47 @@
         bringToFront(el, item);
         const startX = e.clientX, startY = e.clientY;
         const sx = item.x, sy = item.y, sw = item.w, sh = item.h;
+        const lockRatio = item.type === 'image';
+        const ratio = sw / sh;
         function onMove(ev) {
           const dx = (ev.clientX - startX) / scale;
           const dy = (ev.clientY - startY) / scale;
-          if (dir.includes('e')) item.w = Math.max(60, sw + dx);
-          if (dir.includes('s')) item.h = Math.max(40, sh + dy);
-          if (dir.includes('w')) {
-            const nw = Math.max(60, sw - dx);
-            item.x = snap(sx + (sw - nw)); item.w = nw;
+          if (lockRatio) {
+            let newW, newH;
+            if (dir.length === 2) {
+              const signX = dir.includes('w') ? -1 : 1;
+              const signY = dir.includes('n') ? -1 : 1;
+              const scaleW = (sw + signX * dx) / sw;
+              const scaleH = (sh + signY * dy) / sh;
+              const scaleChosen = Math.abs(scaleW - 1) > Math.abs(scaleH - 1) ? scaleW : scaleH;
+              newW = sw * scaleChosen;
+              newH = sh * scaleChosen;
+            } else if (dir === 'n' || dir === 's') {
+              newH = sh + (dir === 'n' ? -dy : dy);
+              newW = newH * ratio;
+            } else {
+              newW = sw + (dir === 'w' ? -dx : dx);
+              newH = newW / ratio;
+            }
+            if (newW < 60) { newW = 60; newH = newW / ratio; }
+            if (newH < 40) { newH = 40; newW = newH * ratio; }
+            item.w = snap(newW); item.h = snap(newH);
+            item.x = dir.includes('w') ? snap(sx + sw - item.w) : sx;
+            item.y = dir.includes('n') ? snap(sy + sh - item.h) : sy;
+          } else {
+            if (dir.includes('e')) item.w = Math.max(60, sw + dx);
+            if (dir.includes('s')) item.h = Math.max(40, sh + dy);
+            if (dir.includes('w')) {
+              const nw = Math.max(60, sw - dx);
+              item.x = snap(sx + (sw - nw)); item.w = nw;
+            }
+            if (dir.includes('n')) {
+              const nh = Math.max(40, sh - dy);
+              item.y = snap(sy + (sh - nh)); item.h = nh;
+            }
+            if (!dir.includes('w')) item.w = snap(item.w);
+            if (!dir.includes('n')) item.h = snap(item.h);
           }
-          if (dir.includes('n')) {
-            const nh = Math.max(40, sh - dy);
-            item.y = snap(sy + (sh - nh)); item.h = nh;
-          }
-          if (!dir.includes('w')) item.w = snap(item.w);
-          if (!dir.includes('n')) item.h = snap(item.h);
           el.style.left = item.x + 'px'; el.style.top = item.y + 'px';
           el.style.width = item.w + 'px'; el.style.height = item.h + 'px';
         }
@@ -2326,14 +2352,41 @@
   });
   document.getElementById('removeBgImageBtn').addEventListener('click', () => { bgImage = null; applyBackground(); commit(); });
 
+  function addImageFile(dataUrl) {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 260;
+      const ratio = img.naturalWidth / img.naturalHeight || 1;
+      const w = ratio >= 1 ? maxDim : maxDim * ratio;
+      const h = ratio >= 1 ? maxDim / ratio : maxDim;
+      addItem({ type: 'image', w, h, content: dataUrl });
+    };
+    img.onerror = () => addItem({ type: 'image', w: 260, h: 220, content: dataUrl });
+    img.src = dataUrl;
+  }
+
   document.getElementById('addImageBtn').addEventListener('click', () => document.getElementById('fileInput').click());
   document.getElementById('fileInput').addEventListener('change', e => {
     Array.from(e.target.files || []).forEach(file => {
       const reader = new FileReader();
-      reader.onload = () => addItem({ type: 'image', w: 260, h: 220, content: reader.result });
+      reader.onload = () => addImageFile(reader.result);
       reader.readAsDataURL(file);
     });
     e.target.value = '';
+  });
+
+  document.addEventListener('paste', e => {
+    const clipItems = (e.clipboardData && e.clipboardData.items) || [];
+    const imageItems = Array.from(clipItems).filter(it => it.type && it.type.startsWith('image/'));
+    if (!imageItems.length) return;
+    e.preventDefault();
+    imageItems.forEach(it => {
+      const file = it.getAsFile();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => addImageFile(reader.result);
+      reader.readAsDataURL(file);
+    });
   });
 
   document.getElementById('clearBoard').addEventListener('click', () => {
