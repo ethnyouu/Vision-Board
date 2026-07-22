@@ -766,6 +766,39 @@
   }
   .item.dragging { cursor: grabbing; z-index: 9999 !important; opacity: 0.95; }
   .item.selected { box-shadow: 0 0 0 3px var(--accent), 0 4px 14px rgba(0,0,0,0.15); }
+  .sticker-item { border-radius: 0; overflow: visible !important; box-shadow: none; }
+  .sticker-item.selected { box-shadow: none; outline: 2px dashed var(--accent); outline-offset: 4px; }
+
+  /* Rotate handle */
+  .rotate-handle {
+    position: absolute;
+    top: -36px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--accent);
+    cursor: grab;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    pointer-events: auto;
+  }
+  .rotate-handle:active { cursor: grabbing; }
+  .item.selected .rotate-handle { display: block; }
+  .rotate-connector {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: var(--accent);
+    opacity: 0.5;
+    top: -20px;
+    left: calc(50% - 1px);
+    display: none;
+    pointer-events: none;
+  }
+  .item.selected .rotate-connector { display: block; }
   /* ---------- Context menu ---------- */
   #ctxMenu {
     position: fixed;
@@ -844,8 +877,102 @@
     user-select: text;
   }
   .text-item:empty::before { content: "Type here..."; opacity: 0.4; }
-  .image-item { overflow: hidden; background: #fff; }
-  .image-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  .image-item { overflow: visible; background: transparent; }
+  .image-item img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  .image-item.has-crop { overflow: visible; background: transparent; }
+
+  /* ---------- Crop modal ---------- */
+  #cropModal {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #cropModal.hidden { display: none; }
+  #cropImageWrap {
+    position: relative;
+    flex-shrink: 0;
+    cursor: crosshair;
+    user-select: none;
+  }
+  #cropImageWrap img {
+    display: block;
+    max-width: calc(100vw - 80px);
+    max-height: calc(100vh - 160px);
+    object-fit: contain;
+    pointer-events: none;
+    border-radius: 4px;
+  }
+  #cropBox {
+    position: absolute;
+    box-sizing: border-box;
+    border: 2px solid rgba(255,255,255,0.9);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+    cursor: move;
+    z-index: 1;
+  }
+  .crop-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border: 1.5px solid var(--accent);
+    border-radius: 2px;
+    z-index: 2;
+    box-sizing: border-box;
+  }
+  .crop-handle[data-dir="nw"] { top: -5px; left: -5px; cursor: nw-resize; }
+  .crop-handle[data-dir="n"]  { top: -5px; left: calc(50% - 5px); cursor: n-resize; }
+  .crop-handle[data-dir="ne"] { top: -5px; right: -5px; cursor: ne-resize; }
+  .crop-handle[data-dir="e"]  { top: calc(50% - 5px); right: -5px; cursor: e-resize; }
+  .crop-handle[data-dir="se"] { bottom: -5px; right: -5px; cursor: se-resize; }
+  .crop-handle[data-dir="s"]  { bottom: -5px; left: calc(50% - 5px); cursor: s-resize; }
+  .crop-handle[data-dir="sw"] { bottom: -5px; left: -5px; cursor: sw-resize; }
+  .crop-handle[data-dir="w"]  { top: calc(50% - 5px); left: -5px; cursor: w-resize; }
+  #cropActions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-shrink: 0;
+    background: rgba(15,20,60,0.75);
+    padding: 10px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+  }
+  #cropActions button {
+    padding: 9px 22px;
+    border-radius: 9px;
+    border: none;
+    font-size: 14px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  #cropCancelBtn {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5) !important;
+  }
+  #cropCancelBtn:hover { background: rgba(255,255,255,0.28); }
+  #cropResetBtn {
+    background: rgba(59,186,171,0.25);
+    color: #7ef5eb;
+    border: 1px solid rgba(59,186,171,0.6) !important;
+  }
+  #cropResetBtn:hover { background: rgba(59,186,171,0.42); color: #fff; }
+  #cropApplyBtn {
+    background: #7b5cd0;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    box-shadow: 0 0 12px rgba(123,92,208,0.6);
+  }
+  #cropApplyBtn:hover { background: #9a7de8; box-shadow: 0 0 18px rgba(154,125,232,0.7); }
 
   /* ---------- Minimap ---------- */
   #minimap {
@@ -888,6 +1015,61 @@
     font-family: var(--font-body);
   }
   #minimapToggle:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+  /* ---------- Stickers dropdown ---------- */
+  #stickersWrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  #stickersPanel {
+    display: none;
+    position: fixed;
+    width: 232px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #1a2050;
+    border: 1px solid rgba(123,92,208,0.35);
+    border-radius: 12px;
+    padding: 10px;
+    z-index: 99997;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  #stickersPanel.open { display: block; }
+  .stickers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .sticker-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: grab;
+    border: 1.5px solid transparent;
+    transition: background 0.13s, border-color 0.13s;
+    user-select: none;
+  }
+  .sticker-thumb:hover {
+    background: rgba(123,92,208,0.2);
+    border-color: rgba(123,92,208,0.5);
+  }
+  .sticker-thumb:active { cursor: grabbing; }
+  .sticker-thumb img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    pointer-events: none;
+  }
+  /* Ghost image shown while dragging a sticker */
+  #stickerDragGhost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999999;
+    display: none;
+    opacity: 0.85;
+  }
 </style>
 </head>
 <body>
@@ -909,6 +1091,28 @@
       <button class="modal-cancel" id="modalCancel">Cancel</button>
       <button class="modal-confirm" id="modalConfirm">Confirm</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Crop Modal ── -->
+<div id="cropModal" class="hidden">
+  <div id="cropImageWrap">
+    <img id="cropModalImg" src="" alt="">
+    <div id="cropBox">
+      <div class="crop-handle" data-dir="nw"></div>
+      <div class="crop-handle" data-dir="n"></div>
+      <div class="crop-handle" data-dir="ne"></div>
+      <div class="crop-handle" data-dir="e"></div>
+      <div class="crop-handle" data-dir="se"></div>
+      <div class="crop-handle" data-dir="s"></div>
+      <div class="crop-handle" data-dir="sw"></div>
+      <div class="crop-handle" data-dir="w"></div>
+    </div>
+  </div>
+  <div id="cropActions">
+    <button id="cropCancelBtn">Cancel</button>
+    <button id="cropResetBtn">Reset</button>
+    <button id="cropApplyBtn">Apply Crop</button>
   </div>
 </div>
 
@@ -975,8 +1179,30 @@
   </div>
 
   <div class="spacer"></div>
+  <div id="stickersWrap">
+    <button id="stickersBtn" title="Stickers">🎨 Stickers</button>
+    <div id="stickersPanel">
+      <div class="stickers-grid">
+        <div class="sticker-thumb" data-src="basketball.png"><img src="basketball.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="violin.png"><img src="violin.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="piano .png"><img src="piano .png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="brain.png"><img src="brain.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="camera.png"><img src="camera.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="dog.png"><img src="dog.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="graduate.png"><img src="graduate.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="harvard.png"><img src="harvard.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="CUNY.png"><img src="CUNY.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="networking.png"><img src="networking.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="tape.png"><img src="tape.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="tree.png"><img src="tree.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="Lightning bulb.png"><img src="Lightning bulb.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="ClassOf2028.png"><img src="ClassOf2028.png" draggable="false"></div>
+      </div>
+    </div>
+  </div>
   <button id="clearBoard" class="danger-btn">🗑️ Clear Board</button>
 </div>
+<div id="stickerDragGhost"><img id="stickerGhostImg" width="80" height="80" style="object-fit:contain;"></div>
 
 <!-- ── Activity Bar ── -->
 <div id="activityBar">
@@ -1023,6 +1249,12 @@
     <span class="field">
       <span class="field-label">Fill</span>
       <input type="color" id="itemFillColor" value="#fff59d" disabled>
+    </span>
+  </span>
+  <div class="style-divider"></div>
+  <span class="field-group disabled" id="cropFieldGroup" title="Crop — select an image first">
+    <span class="field">
+      <button id="cropBtn" style="background:transparent;border:none;color:var(--accent-light);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;padding:0 4px;white-space:nowrap;" disabled>✂ Crop</button>
     </span>
   </span>
   <div class="style-divider"></div>
@@ -1153,7 +1385,7 @@
 
   // ---------- Save / load ----------
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, nextZ, bgColor, bgImage, strokes }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, nextZ, bgColor, bgImage, strokes, scale }));
   }
 
   function applyBackground() {
@@ -1179,6 +1411,7 @@
       bgColor = data.bgColor || bgColor;
       bgImage = data.bgImage || null;
       strokes = data.strokes || [];
+      if (data.scale) scale = data.scale;
       items.forEach(renderItem);
       redrawStrokes();
     } catch (e) { console.error('Failed to load board state', e); }
@@ -1336,6 +1569,9 @@
     const textColorInput = document.getElementById('itemTextColor');
     textColorInput.disabled = !isText;
     if (isText) textColorInput.value = item.textColor || '#000000';
+    const isImage = item && item.type === 'image';
+    document.getElementById('cropBtn').disabled = !isImage;
+    document.getElementById('cropFieldGroup').classList.toggle('disabled', !isImage);
   }
 
   function borderStyleFor(item) {
@@ -1444,10 +1680,11 @@
 
   function makeDraggable(el, item) {
     el.addEventListener('mousedown', e => {
-      if (e.target.closest('.rh')) return;
+      if (e.target.closest('.rh') || e.target.closest('.rotate-handle')) return;
+      const wasSelected = selectedId === item.id;
       selectItem(item.id);
       const isEditable = e.target.isContentEditable;
-      if (isEditable && document.activeElement === e.target) return;
+      if (isEditable && (wasSelected || document.activeElement === e.target)) return;
       e.preventDefault();
       bringToFront(el, item);
       el.classList.add('dragging');
@@ -1461,6 +1698,33 @@
       }
       function onUp() {
         el.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        commit();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function makeRotatable(el, item) {
+    const handle = el.querySelector('.rotate-handle');
+    handle.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const startAngle = item.rotation || 0;
+      const startMouseAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+      handle.style.cursor = 'grabbing';
+      function onMove(ev) {
+        const mouseAngle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI;
+        item.rotation = startAngle + (mouseAngle - startMouseAngle);
+        el.style.transform = `rotate(${item.rotation}deg)`;
+      }
+      function onUp() {
+        handle.style.cursor = '';
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         commit();
@@ -1503,14 +1767,37 @@
       el.addEventListener('dblclick', e => { e.stopPropagation(); contentEl.focus(); placeCaretAtEnd(contentEl); });
     } else if (item.type === 'image') {
       el.classList.add('image-item');
-      const img = document.createElement('img');
-      img.src = item.content;
-      img.draggable = false;
-      el.appendChild(img);
+      if (item.crop) {
+        el.classList.add('has-crop');
+        // Render only the cropped region filling the item using background-image
+        const c = item.crop;
+        const bpx = c.w >= 0.999 ? 0 : (c.x / (1 - c.w) * 100).toFixed(2);
+        const bpy = c.h >= 0.999 ? 0 : (c.y / (1 - c.h) * 100).toFixed(2);
+        el.style.backgroundImage = `url("${item.content}")`;
+        el.style.backgroundSize = `${(100 / c.w).toFixed(2)}% ${(100 / c.h).toFixed(2)}%`;
+        el.style.backgroundPosition = `${bpx}% ${bpy}%`;
+        el.style.backgroundRepeat = 'no-repeat';
+      } else {
+        const img = document.createElement('img');
+        img.src = item.content;
+        img.draggable = false;
+        el.appendChild(img);
+      }
     }
+
+    if (item.sticker) el.classList.add('sticker-item');
+    if (item.rotation) el.style.transform = `rotate(${item.rotation}deg)`;
+
+    const rotConnector = document.createElement('div');
+    rotConnector.className = 'rotate-connector';
+    el.appendChild(rotConnector);
+    const rotHandle = document.createElement('div');
+    rotHandle.className = 'rotate-handle';
+    el.appendChild(rotHandle);
 
     makeDraggable(el, item);
     makeResizeHandles(el, item);
+    makeRotatable(el, item);
     el.addEventListener('contextmenu', e => {
       e.preventDefault(); e.stopPropagation();
       selectItem(item.id);
@@ -1994,6 +2281,7 @@
     commit();
   });
 
+  document.getElementById('fontSizeInput').addEventListener('keydown', e => e.stopPropagation());
   document.getElementById('fontSizeInput').addEventListener('input', e => {
     const item = items.find(i => i.id === selectedId);
     if (!item) return;
@@ -2016,6 +2304,7 @@
   });
   document.getElementById('borderColor').addEventListener('change', () => { if (selectedId) commit(); });
 
+  document.getElementById('borderWidthInput').addEventListener('keydown', e => e.stopPropagation());
   document.getElementById('borderWidthInput').addEventListener('input', e => {
     const item = items.find(i => i.id === selectedId);
     if (!item) return;
@@ -2086,8 +2375,8 @@
     if (e.key !== 'Delete' && e.key !== 'Backspace') return;
     if (!selectedId) return;
     const active = document.activeElement;
-    const editingSelected = active && active.isContentEditable && active.closest('.item') && active.closest('.item').dataset.id === selectedId;
-    if (editingSelected) return;
+    // Only delete when no focusable element is active (user is not typing anywhere)
+    if (active && active !== document.body && active !== document.documentElement) return;
     e.preventDefault();
     removeItemById(selectedId);
   });
@@ -2219,6 +2508,207 @@
   });
   document.getElementById('itemTextColor').addEventListener('change', () => { if (selectedId) commit(); });
 
+  // ---------- Crop ----------
+  (function() {
+    const cropModal = document.getElementById('cropModal');
+    const cropModalImg = document.getElementById('cropModalImg');
+    const cropImageWrap = document.getElementById('cropImageWrap');
+    const cropBox = document.getElementById('cropBox');
+
+    let cropItemId = null;
+    // cropRect in image-space pixels (relative to the displayed image in the modal)
+    let imgW = 0, imgH = 0; // displayed image dimensions inside cropImageWrap
+    let cropRect = { x: 0, y: 0, w: 0, h: 0 }; // pixels within displayed img
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function setCropBoxFromRect() {
+      cropBox.style.left   = cropRect.x + 'px';
+      cropBox.style.top    = cropRect.y + 'px';
+      cropBox.style.width  = cropRect.w + 'px';
+      cropBox.style.height = cropRect.h + 'px';
+    }
+
+    function openCropModal(itemId) {
+      const item = items.find(i => i.id === itemId);
+      if (!item || item.type !== 'image') return;
+      cropItemId = itemId;
+      cropModal.classList.remove('hidden');
+      drawCanvas.style.pointerEvents = 'none';
+      cropModalImg.src = item.content;
+      cropModalImg.onload = () => {
+        // Get displayed image size after layout
+        const rect = cropModalImg.getBoundingClientRect();
+        imgW = rect.width;
+        imgH = rect.height;
+        // Initialize crop rect from existing crop or full image
+        if (item.crop) {
+          cropRect = {
+            x: item.crop.x * imgW,
+            y: item.crop.y * imgH,
+            w: item.crop.w * imgW,
+            h: item.crop.h * imgH,
+          };
+        } else {
+          cropRect = { x: 0, y: 0, w: imgW, h: imgH };
+        }
+        setCropBoxFromRect();
+      };
+      // If image was already cached, onload may not fire
+      if (cropModalImg.complete && cropModalImg.naturalWidth) {
+        cropModalImg.onload();
+      }
+    }
+
+    function closeCropModal() {
+      cropModal.classList.add('hidden');
+      drawCanvas.style.pointerEvents = '';
+      cropModalImg.src = '';
+      cropItemId = null;
+    }
+
+    function resetCrop() {
+      const rect = cropModalImg.getBoundingClientRect();
+      imgW = rect.width;
+      imgH = rect.height;
+      cropRect = { x: 0, y: 0, w: imgW, h: imgH };
+      setCropBoxFromRect();
+    }
+
+    function applyCrop() {
+      const item = items.find(i => i.id === cropItemId);
+      if (!item) { closeCropModal(); return; }
+      const rect = cropModalImg.getBoundingClientRect();
+      imgW = rect.width;
+      imgH = rect.height;
+      const cx = cropRect.x / imgW;
+      const cy = cropRect.y / imgH;
+      const cw = cropRect.w / imgW;
+      const ch = cropRect.h / imgH;
+      // If the crop covers (nearly) the full image, remove it
+      if (cx < 0.001 && cy < 0.001 && cw > 0.999 && ch > 0.999) {
+        delete item.crop;
+      } else {
+        item.crop = { x: cx, y: cy, w: cw, h: ch };
+      }
+      // Re-render the item
+      const oldEl = canvas.querySelector(`[data-id="${item.id}"]`);
+      if (oldEl) oldEl.remove();
+      const newEl = renderItem(item);
+      if (selectedId === item.id) newEl.classList.add('selected');
+      commit();
+      closeCropModal();
+    }
+
+    document.getElementById('cropBtn').addEventListener('click', () => {
+      if (selectedId) openCropModal(selectedId);
+    });
+    document.getElementById('cropCancelBtn').addEventListener('click', closeCropModal);
+    document.getElementById('cropResetBtn').addEventListener('click', resetCrop);
+    document.getElementById('cropApplyBtn').addEventListener('click', applyCrop);
+
+    // Escape closes the crop modal
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !cropModal.classList.contains('hidden')) {
+        e.stopImmediatePropagation();
+        closeCropModal();
+      }
+    }, true);
+
+    // --- Interaction: draw new crop rect by dragging on the wrap (not on cropBox) ---
+    cropImageWrap.addEventListener('mousedown', e => {
+      if (e.target === cropBox || e.target.closest('#cropBox') === cropBox) return;
+      e.preventDefault();
+      const wrapRect = cropImageWrap.getBoundingClientRect();
+      const startX = clamp(e.clientX - wrapRect.left, 0, imgW);
+      const startY = clamp(e.clientY - wrapRect.top, 0, imgH);
+
+      function onMove(ev) {
+        const cx = clamp(ev.clientX - wrapRect.left, 0, imgW);
+        const cy = clamp(ev.clientY - wrapRect.top, 0, imgH);
+        cropRect = {
+          x: Math.min(startX, cx),
+          y: Math.min(startY, cy),
+          w: Math.abs(cx - startX),
+          h: Math.abs(cy - startY),
+        };
+        setCropBoxFromRect();
+      }
+      function onUp() {
+        // If tiny drag (click), reset to full
+        if (cropRect.w < 4 || cropRect.h < 4) resetCrop();
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // --- Move crop box by dragging inside it ---
+    cropBox.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('crop-handle')) return;
+      e.preventDefault(); e.stopPropagation();
+      const wrapRect = cropImageWrap.getBoundingClientRect();
+      const startX = e.clientX, startY = e.clientY;
+      const origX = cropRect.x, origY = cropRect.y;
+
+      function onMove(ev) {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        cropRect.x = clamp(origX + dx, 0, imgW - cropRect.w);
+        cropRect.y = clamp(origY + dy, 0, imgH - cropRect.h);
+        setCropBoxFromRect();
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // --- Resize via handles ---
+    cropBox.querySelectorAll('.crop-handle').forEach(handle => {
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        const dir = handle.dataset.dir;
+        const startX = e.clientX, startY = e.clientY;
+        const orig = { ...cropRect };
+
+        function onMove(ev) {
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          let { x, y, w, h } = orig;
+          if (dir.includes('e')) w = Math.max(10, orig.w + dx);
+          if (dir.includes('s')) h = Math.max(10, orig.h + dy);
+          if (dir.includes('w')) {
+            const nw = Math.max(10, orig.w - dx);
+            x = orig.x + (orig.w - nw);
+            w = nw;
+          }
+          if (dir.includes('n')) {
+            const nh = Math.max(10, orig.h - dy);
+            y = orig.y + (orig.h - nh);
+            h = nh;
+          }
+          // Constrain to image bounds
+          if (x < 0) { w += x; x = 0; }
+          if (y < 0) { h += y; y = 0; }
+          if (x + w > imgW) w = imgW - x;
+          if (y + h > imgH) h = imgH - y;
+          cropRect = { x, y, w, h };
+          setCropBoxFromRect();
+        }
+        function onUp() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  })();
+
   // ---------- Zoom ----------
   const zoomLabel = document.getElementById('zoomLabel');
   function applyZoom() {
@@ -2246,6 +2736,69 @@
   updateMinimap();
   viewport.scrollLeft = (canvas.offsetWidth - viewport.clientWidth) / 4;
   viewport.scrollTop = (canvas.offsetHeight - viewport.clientHeight) / 4;
+
+  // ---------- Stickers ----------
+  const stickersBtn = document.getElementById('stickersBtn');
+  const stickersPanel = document.getElementById('stickersPanel');
+  const stickerGhost = document.getElementById('stickerDragGhost');
+  const stickerGhostImg = document.getElementById('stickerGhostImg');
+  let stickerDragging = null;
+
+  // Toggle panel — position it below the button using fixed coords
+  stickersBtn.addEventListener('click', () => {
+    if (!stickersPanel.classList.contains('open')) {
+      const r = stickersBtn.getBoundingClientRect();
+      stickersPanel.style.top = (r.bottom + 8) + 'px';
+      stickersPanel.style.right = (window.innerWidth - r.right) + 'px';
+    }
+    stickersPanel.classList.toggle('open');
+  });
+
+  // Close on outside click
+  document.addEventListener('mousedown', e => {
+    if (stickerDragging) return;
+    if (!document.getElementById('stickersWrap').contains(e.target)) {
+      stickersPanel.classList.remove('open');
+    }
+  }, true);
+
+  // Drag-to-place logic
+  document.querySelectorAll('.sticker-thumb').forEach(thumb => {
+    thumb.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const src = thumb.dataset.src;
+      stickerGhostImg.src = src;
+      stickerGhost.style.display = 'block';
+      stickerGhost.style.left = (e.clientX - 40) + 'px';
+      stickerGhost.style.top = (e.clientY - 40) + 'px';
+      stickerDragging = { src };
+    });
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!stickerDragging) return;
+    stickerGhost.style.left = (e.clientX - 40) + 'px';
+    stickerGhost.style.top = (e.clientY - 40) + 'px';
+  });
+
+  document.addEventListener('mouseup', e => {
+    if (!stickerDragging) return;
+    stickerGhost.style.display = 'none';
+    const vpRect = viewport.getBoundingClientRect();
+    if (e.clientX >= vpRect.left && e.clientX <= vpRect.right &&
+        e.clientY >= vpRect.top  && e.clientY <= vpRect.bottom) {
+      const canvasRect = canvas.getBoundingClientRect();
+      const x = (e.clientX - canvasRect.left) / scale - 80;
+      const y = (e.clientY - canvasRect.top) / scale - 80;
+      const newItem = { id: uid(), type: 'image', content: stickerDragging.src,
+        x: Math.max(0, x), y: Math.max(0, y), w: 160, h: 160, z: nextZ++, sticker: true };
+      items.push(newItem);
+      renderItem(newItem);
+      commit();
+    }
+    stickerDragging = null;
+  });
 })();
 </script>
 </body>
