@@ -236,6 +236,24 @@
   }
   :is(#toolbar, #styleBar) .field-group input[type="color"] { width: 22px; height: 22px; }
 
+  .format-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-light);
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .format-btn:hover { background: rgba(224,216,244,0.14); color: #fff; }
+  .format-btn.active { background: var(--accent); color: #fff; }
+  .format-btn:disabled { opacity: 0.3; cursor: default; }
+  .format-btn:disabled:hover { background: transparent; color: var(--accent-light); }
+
   /* ---------- Style bar ---------- */
   #styleBar {
     position: fixed;
@@ -455,7 +473,7 @@
     transition: background 0.15s, color 0.15s;
   }
   #toolbar .zoom-label:hover { background: var(--navy-light); color: #fff; }
-  #fileInput, #bgImageInput { display: none; }
+  #fileInput, #bgImageInput, #placeholderFileInput { display: none; }
 
   /* ---------- Activity bar ---------- */
   #activityBar {
@@ -877,6 +895,8 @@
     user-select: text;
   }
   .text-item:empty::before { content: "Type here..."; opacity: 0.4; }
+  .sticky ul, .sticky ol, .text-item ul, .text-item ol { margin: 4px 0; padding-left: 22px; }
+  .sticky li, .text-item li { margin-bottom: 2px; }
   .image-item { overflow: visible; background: transparent; }
   .image-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
   .image-item.has-crop { overflow: visible; background: transparent; }
@@ -1070,6 +1090,100 @@
     display: none;
     opacity: 0.85;
   }
+
+  /* ---------- Templates dropdown ---------- */
+  #templatesWrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  #templatesPanel {
+    display: none;
+    position: fixed;
+    width: 280px;
+    max-height: 440px;
+    overflow-y: auto;
+    background: #1a2050;
+    border: 1px solid rgba(123,92,208,0.35);
+    border-radius: 12px;
+    padding: 10px;
+    z-index: 99997;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  #templatesPanel.open { display: block; }
+  .templates-panel-label {
+    color: rgba(224,216,244,0.4);
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 2px 6px 8px;
+  }
+  .template-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: background 0.13s, border-color 0.13s;
+  }
+  .template-card:not(:last-child) { margin-bottom: 4px; }
+  .template-card:hover {
+    background: rgba(123,92,208,0.2);
+    border-color: rgba(123,92,208,0.5);
+  }
+  .template-card-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    width: 34px;
+    text-align: center;
+  }
+  .template-card-text { min-width: 0; }
+  .template-card-name {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .template-card-desc {
+    color: rgba(224,216,244,0.5);
+    font-size: 11.5px;
+    line-height: 1.35;
+    margin-top: 2px;
+  }
+
+  /* ---------- Photo placeholder (template "add your own photo" slots) ---------- */
+  .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.55);
+    border: 2.5px dashed rgba(123,92,208,0.5);
+    border-radius: 10px;
+    color: #4b4470;
+    text-align: center;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .placeholder-content:hover {
+    background: rgba(123,92,208,0.14);
+    border-color: var(--accent);
+  }
+  .placeholder-icon { font-size: 26px; opacity: 0.75; }
+  .placeholder-label {
+    font-weight: 600;
+    font-size: 12.5px;
+    font-family: var(--font-body);
+  }
+  .placeholder-hint {
+    font-size: 10.5px;
+    opacity: 0.75;
+    line-height: 1.3;
+    padding: 0 4px;
+  }
 </style>
 </head>
 <body>
@@ -1121,8 +1235,8 @@
   <div class="title">Vision Board</div>
 
   <div class="toolbar-section">
-    <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↩ Undo</button>
-    <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↪ Redo</button>
+    <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+    <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -1136,8 +1250,8 @@
         <input type="color" id="stickyColor" value="#fff59d">
       </label>
     </div>
-    <button id="addText">🔤 Text</button>
-    <button id="addImageBtn">🖼️ Image</button>
+    <button id="addText">Text</button>
+    <button id="addImageBtn">Image</button>
     <input type="file" id="fileInput" accept="image/*" multiple>
   </div>
 
@@ -1145,8 +1259,8 @@
 
   <div class="toolbar-section">
     <span class="section-label">Draw</span>
-    <button id="toggleDraw" title="Toggle draw mode">✏️ Draw</button>
-    <button id="toggleEraser" title="Eraser">🧽 Eraser</button>
+    <button id="toggleDraw" title="Toggle draw mode">Draw</button>
+    <button id="toggleEraser" title="Eraser">Eraser</button>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -1154,8 +1268,8 @@
   <div class="toolbar-section">
     <span class="section-label">Background</span>
     <span class="btn-group bg-group">
-      <label class="color-label" for="bgColor">🎨<input type="color" id="bgColor" value="#dcd7ca"></label>
-      <button id="addBgImageBtn" title="Set background image">🖼️ Image</button>
+      <label class="color-label" for="bgColor"><input type="color" id="bgColor" value="#dcd7ca"></label>
+      <button id="addBgImageBtn" title="Set background image">Image</button>
       <input type="file" id="bgImageInput" accept="image/*">
       <button id="removeBgImageBtn" title="Remove background image" disabled>✕</button>
     </span>
@@ -1179,8 +1293,49 @@
   </div>
 
   <div class="spacer"></div>
+  <div id="templatesWrap">
+    <button id="templatesBtn" title="Start from a template">📐 Templates</button>
+    <div id="templatesPanel">
+      <div class="templates-panel-label">Start from a template</div>
+      <div class="template-card" data-template="blank">
+        <div class="template-card-icon">📄</div>
+        <div class="template-card-text">
+          <div class="template-card-name">Blank Board</div>
+          <div class="template-card-desc">Clear everything and start fresh</div>
+        </div>
+      </div>
+      <div class="template-card" data-template="academic">
+        <div class="template-card-icon">🎓</div>
+        <div class="template-card-text">
+          <div class="template-card-name">Academic &amp; Career Path</div>
+          <div class="template-card-desc">Dream schools, majors, career goals — with spots for your own photos</div>
+        </div>
+      </div>
+      <div class="template-card" data-template="hobbies">
+        <div class="template-card-icon">🎨</div>
+        <div class="template-card-text">
+          <div class="template-card-name">Hobbies &amp; Passions</div>
+          <div class="template-card-desc">Activities, skills, creative outlets — add your own pics</div>
+        </div>
+      </div>
+      <div class="template-card" data-template="lifestyle">
+        <div class="template-card-icon">🏡</div>
+        <div class="template-card-text">
+          <div class="template-card-name">Future Lifestyle</div>
+          <div class="template-card-desc">Where you'll live, routines, relationships — with photo spots</div>
+        </div>
+      </div>
+      <div class="template-card" data-template="full">
+        <div class="template-card-icon">✨</div>
+        <div class="template-card-text">
+          <div class="template-card-name">Full Vision Board</div>
+          <div class="template-card-desc">All 7 categories, ready to fill in with your own photos</div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="stickersWrap">
-    <button id="stickersBtn" title="Stickers">🎨 Stickers</button>
+    <button id="stickersBtn" title="Stickers">Stickers</button>
     <div id="stickersPanel">
       <div class="stickers-grid">
         <div class="sticker-thumb" data-src="basketball.png"><img src="basketball.png" draggable="false"></div>
@@ -1196,13 +1351,13 @@
         <div class="sticker-thumb" data-src="tape.png"><img src="tape.png" draggable="false"></div>
         <div class="sticker-thumb" data-src="tree.png"><img src="tree.png" draggable="false"></div>
         <div class="sticker-thumb" data-src="Lightning bulb.png"><img src="Lightning bulb.png" draggable="false"></div>
-        <div class="sticker-thumb" data-src="ClassOf2028.png"><img src="ClassOf2028.png" draggable="false"></div>
       </div>
     </div>
   </div>
-  <button id="clearBoard" class="danger-btn">🗑️ Clear Board</button>
+  <button id="clearBoard" class="danger-btn">Clear Board</button>
 </div>
 <div id="stickerDragGhost"><img id="stickerGhostImg" width="80" height="80" style="object-fit:contain;"></div>
+<input type="file" id="placeholderFileInput" accept="image/*">
 
 <!-- ── Activity Bar ── -->
 <div id="activityBar">
@@ -1242,6 +1397,18 @@
     <span class="field">
       <span class="field-label">Color</span>
       <input type="color" id="itemTextColor" value="#000000" disabled>
+    </span>
+  </span>
+  <div class="style-divider"></div>
+  <span class="field-group disabled" id="formatFieldGroup" title="Text formatting — select a sticky or text item first">
+    <span class="field">
+      <button class="format-btn" data-cmd="bold" title="Bold" disabled><b>B</b></button>
+      <button class="format-btn" data-cmd="italic" title="Italic" disabled><i>I</i></button>
+      <button class="format-btn" data-cmd="underline" title="Underline" disabled><u>U</u></button>
+    </span>
+    <span class="field">
+      <button class="format-btn" data-cmd="insertUnorderedList" title="Bullet list" disabled>• List</button>
+      <button class="format-btn" data-cmd="insertOrderedList" title="Numbered list" disabled>1. List</button>
     </span>
   </span>
   <div class="style-divider"></div>
@@ -1345,6 +1512,8 @@
   let nextZ = 1;
   let scale = 1;
   let selectedId = null;
+  let didDrag = false;
+  let currentPlaceholderId = null;
   let bgColor = '#dcd7ca';
   let bgImage = null;
   let strokes = [];
@@ -1554,6 +1723,8 @@
     fontFamilySelect.value = isText ? (item.fontFamily || 'inherit') : 'inherit';
     fontSizeInput.value = isText ? (item.fontSize || defaultFontSize(item.type)) : '';
     document.getElementById('textFieldGroup').classList.toggle('disabled', !isText);
+    document.getElementById('formatFieldGroup').classList.toggle('disabled', !isText);
+    document.querySelectorAll('.format-btn').forEach(btn => { btn.disabled = !isText; });
     borderColorInput.disabled = !item;
     borderWidthInput.disabled = !item;
     borderColorInput.value = item ? (item.borderColor || '#000000') : '#000000';
@@ -1707,6 +1878,7 @@
   function makeDraggable(el, item) {
     el.addEventListener('mousedown', e => {
       if (e.target.closest('.rh') || e.target.closest('.rotate-handle')) return;
+      didDrag = false;
       const wasSelected = selectedId === item.id;
       selectItem(item.id);
       const isEditable = e.target.isContentEditable;
@@ -1717,6 +1889,7 @@
       const startX = e.clientX, startY = e.clientY;
       const startLeft = item.x, startTop = item.y;
       function onMove(ev) {
+        if (Math.abs(ev.clientX - startX) > 3 || Math.abs(ev.clientY - startY) > 3) didDrag = true;
         item.x = snap(startLeft + (ev.clientX - startX) / scale);
         item.y = snap(startTop + (ev.clientY - startY) / scale);
         el.style.left = item.x + 'px';
@@ -1809,6 +1982,17 @@
         img.draggable = false;
         el.appendChild(img);
       }
+    } else if (item.type === 'placeholder') {
+      const contentEl = document.createElement('div');
+      contentEl.className = 'content placeholder-content';
+      contentEl.innerHTML = `<div class="placeholder-icon">📷</div><div class="placeholder-label">+ Add Photo</div>${item.label ? `<div class="placeholder-hint">${item.label}</div>` : ''}`;
+      contentEl.addEventListener('click', e => {
+        if (didDrag) return;
+        e.stopPropagation();
+        currentPlaceholderId = item.id;
+        document.getElementById('placeholderFileInput').click();
+      });
+      el.appendChild(contentEl);
     }
 
     if (item.sticker) el.classList.add('sticker-item');
@@ -2319,6 +2503,35 @@
     save();
   });
   document.getElementById('fontSizeInput').addEventListener('change', () => { if (selectedId) commit(); });
+
+  // ---------- Text formatting (bold / italic / underline / lists) ----------
+  document.querySelectorAll('.format-btn').forEach(btn => {
+    // Prevent the button from stealing focus away from the text being edited,
+    // so the caret/selection is still in place when execCommand runs.
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => {
+      const item = items.find(i => i.id === selectedId);
+      if (!item || !['sticky', 'text'].includes(item.type)) return;
+      const contentEl = canvas.querySelector(`[data-id="${item.id}"] .content`);
+      if (!contentEl) return;
+      if (document.activeElement !== contentEl) { contentEl.focus(); placeCaretAtEnd(contentEl); }
+      document.execCommand(btn.dataset.cmd, false, null);
+      item.content = contentEl.innerHTML;
+      updateFormatButtonStates();
+      commit();
+    });
+  });
+
+  function updateFormatButtonStates() {
+    const active = document.activeElement;
+    const inContent = active && active.classList && active.classList.contains('content');
+    document.querySelectorAll('.format-btn').forEach(btn => {
+      let isActive = false;
+      if (inContent) { try { isActive = document.queryCommandState(btn.dataset.cmd); } catch (e) {} }
+      btn.classList.toggle('active', isActive);
+    });
+  }
+  document.addEventListener('selectionchange', updateFormatButtonStates);
 
   document.getElementById('borderColor').addEventListener('input', e => {
     const item = items.find(i => i.id === selectedId);
@@ -2851,6 +3064,328 @@
       commit();
     }
     stickerDragging = null;
+  });
+
+  // ---------- Templates ----------
+  document.getElementById('placeholderFileInput').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    const id = currentPlaceholderId;
+    e.target.value = '';
+    currentPlaceholderId = null;
+    if (!file || !id) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      item.type = 'image';
+      item.content = reader.result;
+      delete item.label;
+      renderAll();
+      selectItem(item.id);
+      commit();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ---- Layout shapes ----
+  // Each template picks one of these instead of sharing a single grid, so the
+  // boards read as genuinely different compositions rather than the same
+  // layout recolored. Coordinates are built in a local, arbitrary origin —
+  // centerAndReturn() re-centers the finished result on the canvas afterward,
+  // so nothing here needs to account for the 3000x2000 canvas directly.
+
+  // Diagonal cascading "journey" — each step advances right and down.
+  function packTimeline(blocks, startX, startY) {
+    const rotations = [-4, 3, -3, 4, -2, 3, -4, 2, -3, 4];
+    let x = startX, y = startY;
+    return blocks.map((b, i) => {
+      const placed = { ...b, x, y, rotation: rotations[i % rotations.length] };
+      x += b.w * 0.58 + 46;
+      y += b.h * 0.4 + (i % 2 === 0 ? 34 : -6);
+      return placed;
+    });
+  }
+
+  // Wrapping row flow — items sit left-to-right with generous gaps and wrap
+  // to a new row once a row runs out of width. Gentle alternating rotation
+  // keeps it feeling hand-arranged without ever letting pieces collide.
+  function packFlow(blocks, startX, startY, maxRowWidth) {
+    const gap = 44;
+    const rotations = [-3, 2, -2, 3, -4, 2, -3, 4];
+    let x = startX, y = startY, rowH = 0;
+    return blocks.map((b, i) => {
+      if (x > startX && x + b.w > startX + maxRowWidth) {
+        x = startX;
+        y += rowH + gap;
+        rowH = 0;
+      }
+      const placed = { ...b, x, y, rotation: rotations[i % rotations.length] };
+      x += b.w + gap;
+      rowH = Math.max(rowH, b.h);
+      return placed;
+    });
+  }
+
+  // Big centered hero photo flanked by two EVEN stacked columns of supporting
+  // notes, so the whole composition — and the heading above it — reads as
+  // genuinely centered instead of leaning to whichever side got the extra item.
+  function packHero(blocks, centerX, centerY) {
+    const [hero, ...rest] = blocks;
+    const placed = [{ ...hero, x: centerX - hero.w / 2, y: centerY - hero.h / 2, rotation: 0 }];
+
+    // If there's an odd one out, it goes centered below everything rather
+    // than tipping one column taller than the other.
+    const centerBelow = rest.length % 2 === 1 ? rest[rest.length - 1] : null;
+    const sideItems = centerBelow ? rest.slice(0, -1) : rest;
+
+    const leftX = centerX - hero.w / 2 - 40, rightX = centerX + hero.w / 2 + 40;
+    let leftY = centerY - hero.h / 2, rightY = centerY - hero.h / 2;
+    sideItems.forEach((b, i) => {
+      if (i % 2 === 0) {
+        placed.push({ ...b, x: leftX - b.w, y: leftY, rotation: -5 - i });
+        leftY += b.h + 26;
+      } else {
+        placed.push({ ...b, x: rightX, y: rightY, rotation: 5 + i });
+        rightY += b.h + 26;
+      }
+    });
+
+    if (centerBelow) {
+      const belowY = Math.max(leftY, rightY, centerY + hero.h / 2) + 26;
+      placed.push({ ...centerBelow, x: centerX - centerBelow.w / 2, y: belowY, rotation: 2 });
+    }
+
+    return placed;
+  }
+
+  // "Wheel of life" — a hero photo in the middle with the rest ringed evenly around it.
+  function packWheel(blocks, centerX, centerY) {
+    const [hero, ...rest] = blocks;
+    const placed = [{ ...hero, x: centerX - hero.w / 2, y: centerY - hero.h / 2, rotation: 0 }];
+    const n = rest.length, radius = 420;
+    rest.forEach((b, i) => {
+      const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+      const x = centerX + Math.cos(angle) * radius - b.w / 2;
+      const y = centerY + Math.sin(angle) * radius * 0.7 - b.h / 2;
+      placed.push({ ...b, x, y, rotation: i % 2 === 0 ? -3 : 3 });
+    });
+    return placed;
+  }
+
+  // Shifts every built item so the whole composition's bounding box lands on
+  // the canvas center, regardless of which layout shape produced it.
+  function centerAndReturn(built) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    built.forEach(it => {
+      minX = Math.min(minX, it.x); minY = Math.min(minY, it.y);
+      maxX = Math.max(maxX, it.x + it.w); maxY = Math.max(maxY, it.y + it.h);
+    });
+    const dx = 1500 - (minX + maxX) / 2, dy = 1000 - (minY + maxY) / 2;
+    return built.map(it => ({ ...it, x: it.x + dx, y: it.y + dy }));
+  }
+
+  function layoutTemplateItems(def) {
+    const built = [];
+    const headerW = 640, headerH = 56, headerGap = 26;
+
+    built.push({
+      type: 'text', x: -headerW / 2, y: 0, w: headerW, h: headerH,
+      bgColor: def.headerBg || '#212856', textColor: '#ffffff',
+      content: `<div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;text-align:center;line-height:1.3;">${def.title}</div>`,
+    });
+
+    const belowHeader = headerH + headerGap;
+    let placed;
+    if (def.layout === 'timeline') placed = packTimeline(def.blocks, -260, belowHeader);
+    else if (def.layout === 'hero') placed = packHero(def.blocks, 0, belowHeader + 330);
+    else if (def.layout === 'wheel') placed = packWheel(def.blocks, 0, belowHeader + 380);
+    else placed = packFlow(def.blocks, -410, belowHeader, 820);
+
+    placed.forEach(b => {
+      if (b.kind === 'note') {
+        built.push({
+          type: 'sticky', x: b.x, y: b.y, w: b.w, h: b.h, rotation: b.rotation,
+          color: b.color, content: `<b>${b.title}</b><br>${b.hint || '• <br>• <br>• '}`,
+        });
+      } else {
+        built.push({
+          type: 'placeholder', x: b.x, y: b.y, w: b.w, h: b.h, rotation: b.rotation, label: b.label || '',
+        });
+      }
+    });
+
+    (def.accents || []).forEach(a => {
+      const b = placed[a.near];
+      if (!b) return;
+      const size = a.size || 110;
+      built.push({
+        type: 'image', sticker: true, content: a.src,
+        x: b.x + b.w - size * 0.62, y: b.y - size * 0.4,
+        w: size, h: size, rotation: a.rotation != null ? a.rotation : -8,
+      });
+    });
+
+    (def.tape || []).forEach(t => {
+      const b = placed[t.near];
+      if (!b) return;
+      built.push({
+        type: 'image', sticker: true, content: 'tape.png',
+        x: b.x + (t.dx != null ? t.dx : 14), y: b.y + (t.dy != null ? t.dy : -14),
+        w: 72, h: 34, rotation: t.rotation != null ? t.rotation : -14,
+      });
+    });
+
+    return centerAndReturn(built);
+  }
+
+  const TEMPLATES = [
+    { id: 'blank', name: 'Blank Board', blank: true },
+    {
+      id: 'academic', name: 'Academic & Career Path', icon: '🎓',
+      title: 'ACADEMIC &amp; CAREER PATH', headerBg: '#212856', bgColor: '#f4efe4', layout: 'timeline',
+      blocks: [
+        { kind: 'photo', label: 'Your dream campus', w: 250, h: 300 },
+        { kind: 'note', title: 'Dream Schools', color: '#ffe9b0', w: 270, h: 190 },
+        { kind: 'note', title: 'Major / Field of Study', color: '#cfe3ff', w: 270, h: 170 },
+        { kind: 'photo', label: 'What inspires your career', w: 270, h: 220 },
+        { kind: 'note', title: 'Career Goals', color: '#d9f2df', w: 270, h: 190 },
+        { kind: 'photo', label: 'Someone who inspires you', w: 250, h: 250 },
+      ],
+      accents: [
+        { src: 'graduate.png', near: 0, size: 130, rotation: 10 },
+        { src: 'harvard.png', near: 1, size: 100, rotation: -12 },
+        { src: 'CUNY.png', near: 2, size: 100, rotation: 9 },
+        { src: 'networking.png', near: 4, size: 110, rotation: -9 },
+      ],
+      tape: [{ near: 0, rotation: -16 }, { near: 3, rotation: 13, dx: 16, dy: -12 }],
+    },
+    {
+      id: 'hobbies', name: 'Hobbies & Passions', icon: '🎨',
+      title: 'HOBBIES &amp; PASSIONS', headerBg: '#1ba599', bgColor: '#eafaf6', layout: 'flow',
+      blocks: [
+        { kind: 'photo', label: 'You doing what you love', w: 260, h: 280 },
+        { kind: 'note', title: 'Favorite Activities', color: '#ffd9d9', w: 260, h: 180 },
+        { kind: 'photo', label: 'A skill you want to master', w: 250, h: 230 },
+        { kind: 'note', title: "Skills I'm Building", color: '#e3d9ff', w: 260, h: 170 },
+        { kind: 'note', title: 'Creative Outlets', color: '#fff3c4', w: 260, h: 170 },
+        { kind: 'photo', label: 'Your creative side', w: 250, h: 250 },
+      ],
+      accents: [
+        { src: 'basketball.png', near: 0, size: 110, rotation: -10 },
+        { src: 'soccer.png', near: 1, size: 100, rotation: 9 },
+        { src: 'violin.png', near: 3, size: 100, rotation: -8 },
+        { src: 'piano .png', near: 4, size: 110, rotation: 8 },
+        { src: 'camera.png', near: 2, size: 105, rotation: -9 },
+      ],
+      tape: [{ near: 0, rotation: 15 }, { near: 4, rotation: -13, dx: 18, dy: -12 }],
+    },
+    {
+      id: 'lifestyle', name: 'Future Lifestyle', icon: '🏡',
+      title: 'FUTURE LIFESTYLE', headerBg: '#7b5cd0', bgColor: '#f1eefc', layout: 'hero',
+      blocks: [
+        { kind: 'photo', label: 'Where you picture yourself living', w: 260, h: 290 },
+        { kind: 'note', title: "Where I'll Live", color: '#d7f0ff', w: 260, h: 180 },
+        { kind: 'note', title: 'Daily Routine', color: '#ffe4c4', w: 260, h: 180 },
+        { kind: 'photo', label: 'People who matter most to you', w: 260, h: 230 },
+        { kind: 'note', title: 'Relationships & Social Life', color: '#e0ffe0', w: 260, h: 190 },
+        { kind: 'photo', label: 'A moment of everyday joy', w: 250, h: 250 },
+      ],
+      accents: [
+        { src: 'tree.png', near: 0, size: 120, rotation: 8 },
+        { src: 'dog.png', near: 3, size: 110, rotation: -9 },
+        { src: 'Lightning bulb.png', near: 2, size: 95, rotation: 10 },
+        { src: 'brain.png', near: 4, size: 100, rotation: -8 },
+      ],
+      tape: [{ near: 1, rotation: -14 }, { near: 3, rotation: 12, dx: 16, dy: -12 }],
+    },
+    {
+      id: 'full', name: 'Full Vision Board', icon: '✨',
+      title: 'MY VISION BOARD', headerBg: '#212856', bgColor: '#eef0fa', layout: 'wheel',
+      blocks: [
+        { kind: 'photo', label: 'A photo that captures your vision', w: 270, h: 300 },
+        { kind: 'note', title: 'Academic Field of Interest', color: '#cfe3ff', w: 260, h: 170 },
+        { kind: 'note', title: 'Hobbies', color: '#ffd9d9', w: 260, h: 160 },
+        { kind: 'note', title: 'Future Plans', color: '#fff3c4', w: 260, h: 170 },
+        { kind: 'photo', label: 'Someone or something that inspires you', w: 260, h: 240 },
+        { kind: 'note', title: 'College of Interest', color: '#ffe9b0', w: 260, h: 160 },
+        { kind: 'note', title: 'Future Lifestyle', color: '#d7f0ff', w: 260, h: 170 },
+        { kind: 'note', title: 'Social Life', color: '#e0ffe0', w: 260, h: 160 },
+        { kind: 'note', title: 'Extracurriculars', color: '#e3d9ff', w: 260, h: 170 },
+        { kind: 'photo', label: 'Add your own', w: 250, h: 230 },
+      ],
+      accents: [
+        { src: 'graduate.png', near: 0, size: 130, rotation: 9 },
+        { src: 'basketball.png', near: 2, size: 100, rotation: -9 },
+        { src: 'tree.png', near: 6, size: 105, rotation: 8 },
+        { src: 'brain.png', near: 1, size: 95, rotation: -8 },
+      ],
+      tape: [{ near: 0, rotation: -15 }, { near: 4, rotation: 14, dx: 16, dy: -12 }, { near: 9, rotation: -12 }],
+    },
+  ];
+
+  function applyTemplate(tpl) {
+    showConfirm({
+      icon: tpl.blank ? '📄' : tpl.icon,
+      title: tpl.blank ? 'Start a Blank Board?' : `Use "${tpl.name}" Template?`,
+      message: 'This will replace everything currently on your board — notes, images, stickers, and drawings.',
+      confirmLabel: tpl.blank ? 'Start Blank' : 'Apply Template',
+    }, () => {
+      const built = tpl.blank ? [] : layoutTemplateItems(tpl);
+      items = built.map(it => Object.assign({ id: uid(), z: nextZ++ }, it));
+      strokes = [];
+      bgColor = tpl.bgColor || '#dcd7ca';
+      bgImage = null;
+      deselectAll();
+      renderAll();
+      applyBackground();
+      redrawStrokes();
+      scale = 1;
+      applyZoom();
+
+      // Center the viewport on the template's content (or the canvas center for a blank board)
+      let centerX = 1500, centerY = 1000;
+      if (items.length) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        items.forEach(it => {
+          minX = Math.min(minX, it.x); minY = Math.min(minY, it.y);
+          maxX = Math.max(maxX, it.x + it.w); maxY = Math.max(maxY, it.y + it.h);
+        });
+        centerX = (minX + maxX) / 2;
+        centerY = (minY + maxY) / 2;
+      }
+      viewport.scrollTo({
+        left: Math.max(0, centerX * scale - viewport.clientWidth / 2),
+        top: Math.max(0, centerY * scale - viewport.clientHeight / 2),
+      });
+
+      commit();
+      templatesPanel.classList.remove('open');
+    });
+  }
+
+  const templatesBtn = document.getElementById('templatesBtn');
+  const templatesPanel = document.getElementById('templatesPanel');
+
+  templatesBtn.addEventListener('click', () => {
+    if (!templatesPanel.classList.contains('open')) {
+      const r = templatesBtn.getBoundingClientRect();
+      templatesPanel.style.top = (r.bottom + 8) + 'px';
+      templatesPanel.style.right = (window.innerWidth - r.right) + 'px';
+    }
+    templatesPanel.classList.toggle('open');
+  });
+
+  document.addEventListener('mousedown', e => {
+    if (!document.getElementById('templatesWrap').contains(e.target)) {
+      templatesPanel.classList.remove('open');
+    }
+  }, true);
+
+  document.querySelectorAll('.template-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const tpl = TEMPLATES.find(t => t.id === card.dataset.template);
+      if (tpl) applyTemplate(tpl);
+    });
   });
 })();
 </script>
