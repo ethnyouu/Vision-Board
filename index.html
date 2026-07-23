@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --toolbar-h: 80px;
+    --toolbar-h: 100px;
     --activitybar-h: 30px;
     --stylebar-h: 44px;
     --drawbar-h: 44px;
@@ -51,11 +51,17 @@
     color: #fff;
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: 22px;
-    margin-right: 6px;
-    letter-spacing: 1.5px;
+    font-size: 15px;
+    letter-spacing: 1px;
     white-space: nowrap;
     flex-shrink: 0;
+    line-height: 1;
+  }
+  #toolbar .title .brand {
+    display: block;
+    font-size: 32px;
+    letter-spacing: 2px;
+    line-height: 1;
   }
   #toolbar button {
     background: var(--navy-light);
@@ -72,7 +78,7 @@
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     white-space: nowrap;
     flex-shrink: 0;
-    height: 40px;
+    height: 46px;
     font-weight: 500;
   }
   #toolbar button:hover { background: var(--navy-hover); border-color: rgba(224,216,244,0.35); color: #fff; }
@@ -1232,7 +1238,7 @@
 
 <!-- ── Toolbar ── -->
 <div id="toolbar">
-  <div class="title">Vision Board</div>
+  <div class="title">Clear Pillar<span class="brand">Vision Board</span></div>
 
   <div class="toolbar-section">
     <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
