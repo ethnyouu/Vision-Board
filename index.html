@@ -113,23 +113,6 @@
     border-bottom-left-radius: 0;
     border-left: none;
   }
-  #toolbar .btn-group.bg-group {
-    align-items: center;
-    background: var(--navy-light);
-    border: 1px solid rgba(224,216,244,0.18);
-    border-radius: 9px;
-    padding: 0 6px 0 12px;
-    gap: 4px;
-    height: 40px;
-  }
-  #toolbar .btn-group.bg-group .color-label { padding: 0; }
-  #toolbar .btn-group.bg-group button {
-    border-radius: 7px;
-    background: transparent;
-    border: none;
-    height: 30px;
-  }
-  #toolbar .btn-group.bg-group button:hover { background: rgba(224,216,244,0.1); border: none; }
   #toolbar input[type="color"] {
     width: 28px; height: 28px;
     border: none; border-radius: 7px;
@@ -1113,6 +1096,51 @@
     opacity: 0.85;
   }
 
+  /* ---------- Inspire panel ---------- */
+  #inspireWrap { position: relative; flex-shrink: 0; }
+  #inspirePanel {
+    display: none;
+    position: fixed;
+    right: auto;
+    width: 260px;
+    background: #1a2050;
+    border: 1px solid rgba(123,92,208,0.35);
+    border-radius: 12px;
+    padding: 8px;
+    z-index: 99997;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  #inspirePanel.open { display: block; }
+  .inspire-label {
+    color: rgba(224,216,244,0.4);
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 2px 8px 8px;
+  }
+  .inspire-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    text-decoration: none;
+    color: var(--accent-light);
+    font-size: 13px;
+    font-family: var(--font-body);
+    transition: background 0.13s;
+    border: 1.5px solid transparent;
+  }
+  .inspire-link:not(:last-child) { margin-bottom: 3px; }
+  .inspire-link:hover {
+    background: rgba(123,92,208,0.2);
+    border-color: rgba(123,92,208,0.4);
+    color: #fff;
+  }
+  .inspire-link-icon { font-size: 16px; flex-shrink: 0; }
+  .inspire-link-text { line-height: 1.3; }
+
   /* ---------- Templates dropdown ---------- */
   #templatesWrap {
     position: relative;
@@ -1317,6 +1345,32 @@
     <span class="section-label">View</span>
     <button id="snapBtn" title="Snap to grid (22px)">⊞ Snap</button>
     <button id="fullscreenBtn" title="Fullscreen">⛶ Fullscreen</button>
+    <div id="inspireWrap">
+      <button id="inspireBtn">✨ Inspire</button>
+      <div id="inspirePanel">
+        <div class="inspire-label">Inspiration Links</div>
+        <a class="inspire-link" href="https://www.k12.com/study-resources/vision-board-ideas-for-students/" target="_blank" rel="noopener">
+          <span class="inspire-link-icon">🎓</span>
+          <span class="inspire-link-text">Vision Board Ideas for Students</span>
+        </a>
+        <a class="inspire-link" href="https://www.pinterest.com/scrappinmichele/vision-board-samples/" target="_blank" rel="noopener">
+          <span class="inspire-link-icon">📌</span>
+          <span class="inspire-link-text">Pinterest Vision Board Samples</span>
+        </a>
+        <a class="inspire-link" href="https://www.pinterest.com/search/pins/?q=vision%20board%20ideas&rs=typed" target="_blank" rel="noopener">
+          <span class="inspire-link-icon">🔍</span>
+          <span class="inspire-link-text">Pinterest Vision Board Ideas</span>
+        </a>
+        <a class="inspire-link" href="https://bulletjournal.com/blogs/bulletjournalist/how-i-make-vision-boards-to-set-intentions-with-my-bullet-journal?srsltid=AfmBOoo7MguNDlqxYDl5ieV_wP3j-AN0BQGbf92kwT9AQUgqWJg1pMDu" target="_blank" rel="noopener">
+          <span class="inspire-link-icon">📓</span>
+          <span class="inspire-link-text">Bullet Journal Vision Boards</span>
+        </a>
+        <a class="inspire-link" href="https://www.thegoodtrade.com/features/vision-board-ideas/" target="_blank" rel="noopener">
+          <span class="inspire-link-icon">🌿</span>
+          <span class="inspire-link-text">The Good Trade Vision Board Ideas</span>
+        </a>
+      </div>
+    </div>
   </div>
 
   <div class="spacer"></div>
@@ -1335,21 +1389,21 @@
         <div class="template-card-icon">🎓</div>
         <div class="template-card-text">
           <div class="template-card-name">Academic &amp; Career Path</div>
-          <div class="template-card-desc">Dream schools, majors, career goals — with spots for your own photos</div>
+          <div class="template-card-desc">Dream schools, majors, and career goals</div>
         </div>
       </div>
       <div class="template-card" data-template="hobbies">
         <div class="template-card-icon">🎨</div>
         <div class="template-card-text">
           <div class="template-card-name">Hobbies &amp; Passions</div>
-          <div class="template-card-desc">Activities, skills, creative outlets — add your own pics</div>
+          <div class="template-card-desc">Activities, skills, and creative outlets</div>
         </div>
       </div>
       <div class="template-card" data-template="lifestyle">
         <div class="template-card-icon">🏡</div>
         <div class="template-card-text">
           <div class="template-card-name">Future Lifestyle</div>
-          <div class="template-card-desc">Where you'll live, routines, relationships — with photo spots</div>
+          <div class="template-card-desc">Where you'll live, routines, and relationships</div>
         </div>
       </div>
       <div class="template-card" data-template="full">
@@ -1395,6 +1449,7 @@
         <div class="sticker-thumb" data-src="Lawyer.png"><img src="Lawyer.png" draggable="false"></div>
         <div class="sticker-thumb" data-src="Robotics.png"><img src="Robotics.png" draggable="false"></div>
         <div class="sticker-thumb" data-src="Scioly.png"><img src="Scioly.png" draggable="false"></div>
+        <div class="sticker-thumb" data-src="ClassOf2028.png"><img src="ClassOf2028.png" draggable="false"></div>
       </div>
     </div>
   </div>
@@ -2872,7 +2927,7 @@
 
     function closeCropModal() {
       cropModal.classList.add('hidden');
-      drawCanvas.style.pointerEvents = '';
+      drawCanvas.style.pointerEvents = 'auto';
       cropModalImg.src = '';
       cropItemId = null;
     }
@@ -3412,6 +3467,30 @@
 
   const templatesBtn = document.getElementById('templatesBtn');
   const templatesPanel = document.getElementById('templatesPanel');
+
+  // ── Inspire panel ──
+  const inspireBtn = document.getElementById('inspireBtn');
+  const inspirePanel = document.getElementById('inspirePanel');
+  inspireBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!inspirePanel.classList.contains('open')) {
+      const r = inspireBtn.getBoundingClientRect();
+      inspirePanel.style.top = '-9999px';
+      inspirePanel.style.left = '-9999px';
+      inspirePanel.classList.add('open');
+      const panelH = inspirePanel.offsetHeight;
+      inspirePanel.classList.remove('open');
+      const top = Math.min(r.top, window.innerHeight - panelH - 8);
+      inspirePanel.style.top = Math.max(8, top) + 'px';
+      inspirePanel.style.left = (r.right + 8) + 'px';
+    }
+    inspirePanel.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!document.getElementById('inspireWrap').contains(e.target)) {
+      inspirePanel.classList.remove('open');
+    }
+  });
 
   templatesBtn.addEventListener('click', () => {
     if (!templatesPanel.classList.contains('open')) {
