@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --toolbar-h: 100px;
+    --sidebar-w: 220px;
     --activitybar-h: 30px;
     --stylebar-h: 44px;
     --drawbar-h: 44px;
@@ -32,53 +32,56 @@
     background: #eee;
   }
 
-  /* ---------- Toolbar ---------- */
+  /* ---------- Toolbar (left sidebar) ---------- */
   #toolbar {
     position: fixed;
-    top: 0; left: 0; right: 0;
-    height: var(--toolbar-h);
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
     background: var(--navy);
     display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 14px 10px 10px;
     z-index: 10000;
-    box-shadow: 0 2px 0 rgba(123,92,208,0.2), 0 4px 24px rgba(0,0,0,0.5);
-    overflow-x: auto;
-    overflow-y: hidden;
+    box-shadow: 2px 0 0 rgba(123,92,208,0.2), 4px 0 24px rgba(0,0,0,0.4);
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   #toolbar .title {
     color: #fff;
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: 15px;
+    font-size: 13px;
     letter-spacing: 1px;
     white-space: nowrap;
     flex-shrink: 0;
     line-height: 1;
+    padding: 0 4px 10px;
   }
   #toolbar .title .brand {
     display: block;
-    font-size: 32px;
+    font-size: 28px;
     letter-spacing: 2px;
-    line-height: 1;
+    line-height: 1.1;
   }
   #toolbar button {
     background: var(--navy-light);
     color: var(--accent-light);
     border: 1px solid rgba(224,216,244,0.18);
-    padding: 7px 13px;
-    border-radius: 9px;
+    padding: 0 10px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 13px;
     font-family: var(--font-body);
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     white-space: nowrap;
     flex-shrink: 0;
-    height: 46px;
+    height: 34px;
+    width: 100%;
     font-weight: 500;
   }
   #toolbar button:hover { background: var(--navy-hover); border-color: rgba(224,216,244,0.35); color: #fff; }
@@ -263,8 +266,8 @@
   /* ---------- Style bar ---------- */
   #styleBar {
     position: fixed;
-    top: calc(var(--toolbar-h) + var(--activitybar-h));
-    left: 0; right: 0;
+    top: var(--activitybar-h);
+    left: var(--sidebar-w); right: 0;
     height: var(--stylebar-h);
     background: #1c2262;
     border-bottom: 1px solid rgba(123,92,208,0.3);
@@ -300,18 +303,18 @@
     flex-shrink: 0;
   }
   body.stylebar-open #viewport {
-    top: calc(var(--toolbar-h) + var(--activitybar-h) + var(--stylebar-h));
+    top: calc(var(--activitybar-h) + var(--stylebar-h));
   }
   body.drawbar-open #viewport {
-    top: calc(var(--toolbar-h) + var(--activitybar-h) + var(--drawbar-h));
+    top: calc(var(--activitybar-h) + var(--drawbar-h));
   }
   #viewport { transition: top 0.18s ease; }
 
   /* ---------- Draw bar ---------- */
   #drawBar {
     position: fixed;
-    top: calc(var(--toolbar-h) + var(--activitybar-h));
-    left: 0; right: 0;
+    top: var(--activitybar-h);
+    left: var(--sidebar-w); right: 0;
     height: var(--drawbar-h);
     background: #1c2262;
     border-bottom: 1px solid rgba(123,92,208,0.3);
@@ -403,8 +406,10 @@
   .sticky-btn-wrap {
     display: flex;
     flex-shrink: 0;
+    width: 100%;
   }
   .sticky-btn-wrap #addSticky {
+    flex: 1;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
@@ -412,13 +417,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    width: 30px;
+    height: 34px;
+    width: 32px;
     background: var(--navy-light);
     border: 1px solid rgba(224,216,244,0.18);
     border-left: none;
-    border-top-right-radius: 9px;
-    border-bottom-right-radius: 9px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
     cursor: pointer;
     flex-shrink: 0;
     position: relative;
@@ -445,27 +450,37 @@
   /* ---------- Toolbar sections ---------- */
   #toolbar .toolbar-section {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
     flex-shrink: 0;
   }
   #toolbar .section-label {
     color: var(--teal-light);
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 400;
-    letter-spacing: 1.2px;
+    letter-spacing: 1.4px;
     white-space: nowrap;
     flex-shrink: 0;
+    padding: 0 4px;
+    margin-bottom: 1px;
   }
   #toolbar .toolbar-divider {
-    width: 1px;
-    align-self: stretch;
-    margin: 14px 6px;
-    background: rgba(59,186,171,0.25);
+    height: 1px;
+    width: 100%;
+    margin: 6px 0;
+    background: rgba(59,186,171,0.2);
     flex-shrink: 0;
   }
-  #toolbar .spacer { flex: 1 0 8px; }
+  #toolbar .spacer { flex: 1 0 0; }
+  /* Inline rows within sidebar sections (undo/redo, zoom, bg) */
+  #toolbar .sb-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  #toolbar .sb-row button { flex: 1; width: auto; }
   #toolbar .zoom-label {
     color: var(--accent-light);
     font-size: 13px;
@@ -484,8 +499,8 @@
   /* ---------- Activity bar ---------- */
   #activityBar {
     position: fixed;
-    top: var(--toolbar-h);
-    left: 0; right: 0;
+    top: 0;
+    left: var(--sidebar-w); right: 0;
     height: var(--activitybar-h);
     background: #1a2050;
     border-bottom: 1px solid rgba(123,92,208,0.2);
@@ -737,8 +752,8 @@
   /* ---------- Canvas viewport ---------- */
   #viewport {
     position: absolute;
-    top: calc(var(--toolbar-h) + var(--activitybar-h));
-    left: 0; right: 0; bottom: 0;
+    top: var(--activitybar-h);
+    left: var(--sidebar-w); right: 0; bottom: 0;
     overflow: auto;
     background: #dcd7ca;
   }
@@ -1241,8 +1256,10 @@
   <div class="title">Clear Pillar<span class="brand">Vision Board</span></div>
 
   <div class="toolbar-section">
-    <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
-    <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+    <div class="sb-row">
+      <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↩ Undo</button>
+      <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↪ Redo</button>
+    </div>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -1256,8 +1273,8 @@
         <input type="color" id="stickyColor" value="#fff59d">
       </label>
     </div>
-    <button id="addText">Text</button>
-    <button id="addImageBtn">Image</button>
+    <button id="addText">🔤 Text</button>
+    <button id="addImageBtn">🖼️ Image</button>
     <input type="file" id="fileInput" accept="image/*" multiple>
   </div>
 
@@ -1265,29 +1282,31 @@
 
   <div class="toolbar-section">
     <span class="section-label">Draw</span>
-    <button id="toggleDraw" title="Toggle draw mode">Draw</button>
-    <button id="toggleEraser" title="Eraser">Eraser</button>
+    <button id="toggleDraw" title="Toggle draw mode">✏️ Draw</button>
+    <button id="toggleEraser" title="Eraser">🧽 Eraser</button>
   </div>
 
   <div class="toolbar-divider"></div>
 
   <div class="toolbar-section">
     <span class="section-label">Background</span>
-    <span class="btn-group bg-group">
-      <label class="color-label" for="bgColor"><input type="color" id="bgColor" value="#dcd7ca"></label>
-      <button id="addBgImageBtn" title="Set background image">Image</button>
+    <div class="sb-row">
+      <label class="color-label" for="bgColor" title="Background color" style="cursor:pointer;flex-shrink:0;">🎨<input type="color" id="bgColor" value="#dcd7ca" style="width:22px;height:22px;border:none;border-radius:5px;cursor:pointer;background:none;padding:0;"></label>
+      <button id="addBgImageBtn" title="Set background image" style="flex:1;">🖼️ Image</button>
       <input type="file" id="bgImageInput" accept="image/*">
-      <button id="removeBgImageBtn" title="Remove background image" disabled>✕</button>
-    </span>
+      <button id="removeBgImageBtn" title="Remove background image" disabled style="flex:0 0 28px;padding:0;justify-content:center;">✕</button>
+    </div>
   </div>
 
   <div class="toolbar-divider"></div>
 
   <div class="toolbar-section">
     <span class="section-label">Zoom</span>
-    <button id="zoomOut">−</button>
-    <span class="zoom-label" id="zoomLabel" title="Click to reset zoom">100%</span>
-    <button id="zoomIn">+</button>
+    <div class="sb-row">
+      <button id="zoomOut" style="flex:0 0 32px;padding:0;justify-content:center;">−</button>
+      <span class="zoom-label" id="zoomLabel" title="Click to reset zoom" style="flex:1;text-align:center;">100%</span>
+      <button id="zoomIn" style="flex:0 0 32px;padding:0;justify-content:center;">+</button>
+    </div>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -3020,8 +3039,9 @@
   stickersBtn.addEventListener('click', () => {
     if (!stickersPanel.classList.contains('open')) {
       const r = stickersBtn.getBoundingClientRect();
-      stickersPanel.style.top = (r.bottom + 8) + 'px';
-      stickersPanel.style.right = (window.innerWidth - r.right) + 'px';
+      stickersPanel.style.top = r.top + 'px';
+      stickersPanel.style.left = (r.right + 8) + 'px';
+      stickersPanel.style.right = 'auto';
     }
     stickersPanel.classList.toggle('open');
   });
@@ -3375,8 +3395,9 @@
   templatesBtn.addEventListener('click', () => {
     if (!templatesPanel.classList.contains('open')) {
       const r = templatesBtn.getBoundingClientRect();
-      templatesPanel.style.top = (r.bottom + 8) + 'px';
-      templatesPanel.style.right = (window.innerWidth - r.right) + 'px';
+      templatesPanel.style.top = r.top + 'px';
+      templatesPanel.style.left = (r.right + 8) + 'px';
+      templatesPanel.style.right = 'auto';
     }
     templatesPanel.classList.toggle('open');
   });
