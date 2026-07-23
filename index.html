@@ -603,7 +603,7 @@
   /* ---------- Checklist drawer ---------- */
   #checklistDrawer {
     position: fixed;
-    left: 12px; bottom: 0;
+    left: calc(var(--sidebar-w) + 12px); bottom: 0;
     width: 300px;
     z-index: 9999;
     background: rgba(26, 32, 80, 0.55);
@@ -1065,6 +1065,7 @@
   #stickersPanel {
     display: none;
     position: fixed;
+    right: auto;
     width: 232px;
     max-height: 400px;
     overflow-y: auto;
@@ -1120,6 +1121,7 @@
   #templatesPanel {
     display: none;
     position: fixed;
+    right: auto;
     width: 280px;
     max-height: 440px;
     overflow-y: auto;
@@ -3039,7 +3041,9 @@
   stickersBtn.addEventListener('click', () => {
     if (!stickersPanel.classList.contains('open')) {
       const r = stickersBtn.getBoundingClientRect();
-      stickersPanel.style.top = r.top + 'px';
+      const panelH = 400;
+      const top = Math.min(r.top, window.innerHeight - panelH - 8);
+      stickersPanel.style.top = Math.max(8, top) + 'px';
       stickersPanel.style.left = (r.right + 8) + 'px';
       stickersPanel.style.right = 'auto';
     }
@@ -3395,7 +3399,9 @@
   templatesBtn.addEventListener('click', () => {
     if (!templatesPanel.classList.contains('open')) {
       const r = templatesBtn.getBoundingClientRect();
-      templatesPanel.style.top = r.top + 'px';
+      const panelH = 440;
+      const top = Math.min(r.top, window.innerHeight - panelH - 8);
+      templatesPanel.style.top = Math.max(8, top) + 'px';
       templatesPanel.style.left = (r.right + 8) + 'px';
       templatesPanel.style.right = 'auto';
     }
